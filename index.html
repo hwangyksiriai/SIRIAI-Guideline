@@ -296,12 +296,12 @@ function toast(msg){
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1400);
 }
 
-/* ── Top nav: Home · Guide · Apply ── */
+/* ── Top nav: Home ── */
 let view = 'main';
 let section = 'top';   // main 화면에서 지금 보이는 곳: top | guide
 function renderNav(){
   const active = view === 'apply' ? 'apply' : section;
-  const items = [['top', 'home', 'Home'], ['guide', 'drop', 'Guide'], ['apply', 'edit', 'Apply']];
+  const items = [['top', 'home', 'Home']];
   $('nav').innerHTML = items.map(([id, icon, label]) =>
     `<button class="nav-item${id === active ? ' active' : ''}" data-go="${id}">${svg(icon)}${label}</button>`).join('');
 }
