@@ -37,6 +37,17 @@ section{ scroll-margin-top:76px; }
 
 .panel-card{ background:var(--bg); border-radius:16px; padding:24px 20px; }
 
+/* 화면 전환: main(소개+가이드) ↔ apply(지원서) */
+body[data-view="apply"] #top, body[data-view="apply"] #guide{ display:none; }
+body[data-view="main"] #apply{ display:none; }
+body[data-view="apply"] #apply{ animation:fadeIn .35s cubic-bezier(.16,1,.3,1); min-height:calc(100svh - 92px); }
+.back{ display:inline-flex; align-items:center; gap:6px; margin:0 0 18px -4px; padding:6px 10px 6px 6px; border:none; background:var(--card); border-radius:999px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; }
+.back svg{ width:16px; height:16px; stroke:currentColor; stroke-width:2.2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+
+/* 가이드 안 브랜드 탭 — 포트폴리오 '색조·스킨·해외' 버튼과 동일 */
+.g-chips{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; margin:0 0 16px; }
+.g-chips::-webkit-scrollbar{ display:none; }
+
 /* ── 1. Hero (포트폴리오 홈과 동일) ───────────────────────── */
 .hero{ min-height:calc(100svh - 92px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:56px 24px 40px; }
 .hero .brand{ height:20px; margin:0 auto 16px; display:block; }
@@ -173,7 +184,7 @@ textarea.input{ resize:vertical; min-height:84px; line-height:1.5; }
 @media (min-width:600px){ .shell{ padding:16px 16px 100px; } .topbar{ top:16px; } .panel-card{ padding:32px 28px; } }
 </style>
 </head>
-<body>
+<body data-view="main">
 <div class="shell">
   <header class="topbar">
     <button class="logo" data-go="top" aria-label="맨 위로"><img class="mark" src="assets/symbol-black.png" alt=""><img class="word" src="assets/logo-wordmark.png" alt="Siriai"></button>
@@ -285,11 +296,14 @@ function toast(msg){
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1400);
 }
 
-/* ── Top nav: Home + 브랜드 ── */
+/* ── Top nav: Home · Guide · Apply ── */
+let view = 'main';
+let section = 'top';   // main 화면에서 지금 보이는 곳: top | guide
 function renderNav(){
-  $('nav').innerHTML =
-    `<button class="nav-item" data-go="top">${svg('home')}Home</button>` +
-    BRANDS.map((b) => `<button class="nav-item${b.id === current ? ' active' : ''}" data-brand="${b.id}">${svg('drop')}${esc(b.name)}</button>`).join('');
+  const active = view === 'apply' ? 'apply' : section;
+  const items = [['top', 'home', 'Home'], ['guide', 'drop', 'Guide'], ['apply', 'edit', 'Apply']];
+  $('nav').innerHTML = items.map(([id, icon, label]) =>
+    `<button class="nav-item${id === active ? ' active' : ''}" data-go="${id}">${svg(icon)}${label}</button>`).join('');
 }
 
 /* ── 2. 가이드 ── */
@@ -303,6 +317,8 @@ function renderGuide(){
       <p class="g-desc">${esc(b.summary)}</p>
       <div class="marquee"><div class="track">${items}</div><div class="shine" aria-hidden="true"><div class="track">${items}</div></div></div>
     </div>
+    ${BRANDS.length > 1 ? `<div class="g-chips">${BRANDS.map((x) =>
+      `<button class="bchip${x.id === b.id ? ' active' : ''}" data-brand="${x.id}">${esc(x.name)}</button>`).join('')}</div>` : ''}
     <div class="guide-body" key="${b.id}">
       <div class="reels">${b.reels.map((src, i) => src
         ? `<div class="clip"><span class="clip-badge">REF ${i + 1}</span>${/\.(mp4|mov|webm)$/i.test(src) ? `<video src="${esc(src)}" autoplay muted loop playsinline></video>` : `<img src="${esc(src)}" alt="">`}</div>`
@@ -337,6 +353,7 @@ function renderGuide(){
 /* ── 3. 지원서 ── */
 function renderApply(){
   $('apply').innerHTML = `
+    <button class="back" data-back><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>${esc(brand().name)} 가이드로</button>
     <p class="eyebrow">APPLY</p>
     <h2 class="f-title">캠페인 지원하기</h2>
     <p class="f-desc">한 번만 입력하면 선정 즉시 제품 발송·촬영 안내까지 바로 진행돼요.</p>
@@ -455,22 +472,82 @@ function closeSheet(){
   $('fab').setAttribute('aria-expanded', 'false');
 }
 
+/* ── 화면 전환 ──
+   주소: #브랜드 → 소개+가이드 화면 / #apply/브랜드 → 지원서 화면 (뒤로가기로 가이드 복귀) */
+function setView(v){
+  view = v;
+  document.body.dataset.view = v;
+  renderNav();
+  requestAnimationFrame(syncSection);
+}
 function selectBrand(id, scroll = true){
   current = id;
   picked = new Set([id]);
-  renderNav(); renderGuide(); renderBrandChips();
-  document.querySelector('.nav-item.active')?.scrollIntoView({ inline:'nearest', block:'nearest' });
+  if (view === 'apply') setView('main');
+  renderGuide(); renderApply();
   history.replaceState({}, '', '#' + id);
   if (scroll) $('guide').scrollIntoView({ behavior:'smooth' });
 }
+function openApply(){
+  if (view === 'apply') return window.scrollTo({ top:0, behavior:'smooth' });
+  picked = new Set([current]);
+  renderApply();
+  history.pushState({ apply: true }, '', '#apply/' + current);
+  setView('apply');
+  window.scrollTo({ top:0, behavior:'instant' });
+}
+function backToGuide(){
+  if (history.state?.apply) return history.back();      // 가이드에서 넘어온 경우: 진짜 뒤로가기
+  history.replaceState({}, '', '#' + current);           // 지원서 주소로 바로 들어온 경우
+  setView('main');
+  $('guide').scrollIntoView({ behavior:'instant' });
+}
+function route(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  const [a, b] = h.split('/');
+  const id = a === 'apply' ? b : a;
+  if (BRANDS.some((x) => x.id === id)) current = id;
+  picked = new Set([current]);
+  renderGuide(); renderApply();
+  if (a === 'apply') { setView('apply'); window.scrollTo({ top:0, behavior:'instant' }); }
+  else {
+    const wasApply = view === 'apply';
+    setView('main');
+    if (wasApply) $('guide').scrollIntoView({ behavior:'instant' });
+  }
+}
+window.addEventListener('popstate', route);
+
+/* main 화면에서 가이드가 화면 가운데를 넘어오면 상단 메뉴를 Guide 로 */
+function syncSection(){
+  if (view !== 'main') return;
+  const next = $('guide').getBoundingClientRect().top < innerHeight * 0.5 ? 'guide' : 'top';
+  if (next !== section) { section = next; renderNav(); }
+}
+let ticking = false;
+window.addEventListener('scroll', () => {
+  if (ticking) return; ticking = true;
+  requestAnimationFrame(() => { ticking = false; syncSection(); });
+}, { passive: true });
 
 /* ── 이벤트 ── */
 document.addEventListener('click', async (e) => {
   const t = e.target;
   const brandBtn = t.closest('[data-brand]');
   if (brandBtn) { closeSheet(); selectBrand(brandBtn.dataset.brand); return; }
+  if (t.closest('[data-back]')) { backToGuide(); return; }
   const go = t.closest('[data-go]');
-  if (go) { const id = go.dataset.go; (id === 'top' ? window.scrollTo({ top:0, behavior:'smooth' }) : $(id).scrollIntoView({ behavior:'smooth' })); return; }
+  if (go) {
+    const id = go.dataset.go;
+    if (id === 'apply') return openApply();
+    if (view === 'apply') {                       // 지원서 화면에서 Home/Guide → 가이드 화면으로
+      if (history.state?.apply) history.back(); else { history.replaceState({}, '', '#' + current); setView('main'); }
+      setTimeout(() => { (id === 'top' ? window.scrollTo({ top:0, behavior:'instant' }) : $(id).scrollIntoView({ behavior:'instant' })); syncSection(); }, 60);
+      return;
+    }
+    id === 'top' ? window.scrollTo({ top:0, behavior:'smooth' }) : $(id).scrollIntoView({ behavior:'smooth' });
+    return;
+  }
   const pick = t.closest('[data-pick]');
   if (pick) { const id = pick.dataset.pick; picked.has(id) ? picked.delete(id) : picked.add(id); renderBrandChips(); return; }
   const copy = t.closest('[data-copy]');
@@ -494,10 +571,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet
 /* 화살표 안내 말풍선은 처음 조금 보여주고 숨김 */
 setTimeout(() => $('fabTip').classList.add('hide'), 4000);
 
-const fromHash = location.hash.slice(1);
-if (BRANDS.some((b) => b.id === fromHash)) current = fromHash;
-picked = new Set([current]);
-renderNav(); renderGuide(); renderApply();
+route();
 </script>
 </body>
 </html>
