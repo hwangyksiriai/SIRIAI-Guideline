@@ -1,28 +1,58 @@
 {
   "pastBrands": [
-    "ODDTYPE", "INNISFREE", "TOCOBO", "Quadthera", "forhz", "OFFLOW", "KEEPINTOUCH",
-    "Ohayoh", "No the Love", "COSRX", "Musinsa standard beauty", "wizzy", "Finv",
-    "Lusom", "Pretty Actually", "Yadah", "if:fu", "Keybo", "Skinsignal",
-    "8division", "TOOMUCHTAX", "innir", "as if", "Calie", "Bluesunset", "OJOS",
-    "Luaeb", "The Cactus Hotel", "Seven Eight Under", "RATED GREEN", "Lumiere Blanche", "Velvaskin"
+    "ODDTYPE",
+    "INNISFREE",
+    "TOCOBO",
+    "Quadthera",
+    "forhz",
+    "OFFLOW",
+    "KEEPINTOUCH",
+    "Ohayoh",
+    "No the Love",
+    "COSRX",
+    "Musinsa standard beauty",
+    "wizzy",
+    "Finv",
+    "Lusom",
+    "Pretty Actually",
+    "Yadah",
+    "if:fu",
+    "Keybo",
+    "Skinsignal",
+    "8division",
+    "TOOMUCHTAX",
+    "innir",
+    "as if",
+    "Calie",
+    "Bluesunset",
+    "OJOS",
+    "Luaeb",
+    "The Cactus Hotel",
+    "Seven Eight Under",
+    "RATED GREEN",
+    "Lumiere Blanche",
+    "Velvaskin"
   ],
   "brands": [
     {
       "id": "hera",
-      "name": "HERA",
-      "summary": "리플렉션 스킨글로우 파운데이션 — 맑은 상앗빛 피부 표현",
-      "account": "@herabeauty_official",
-      "hashtags": "#광고 #헤라 #리플렉션스킨글로우파운데이션 #맑은상앗빛 #헤라파데",
-      "hashNote": "광고 표기를 멘션 맨 앞에 배치",
-      "reward": "제품",
-      "quota": "10명",
+      "name": "Keepintouch",
+      "summary": "올영 프로모션 ㅋ블러셔",
+      "account": "@keepintouch",
+      "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
+      "hashNote": "-",
+      "reward": "블러셔",
+      "quota": "20명",
       "deadline": "11.20 마감",
       "hot": true,
-      "color": "#171310",
+      "color": "#fbd5eb",
       "category": "뷰티",
       "make": [],
       "upload": [],
-      "reels": ["", ""],
+      "reels": [
+        "reels/hera-1-mw3aawae.mp4",
+        "reels/hera-2-mw3aazeu.mp4"
+      ],
       "tierHashes": []
     },
     {
@@ -38,9 +68,19 @@
       "hot": false,
       "color": "#e8738a",
       "category": "뷰티",
-      "make": ["제품 패키지가 2초 이상 정면으로 보이게", "손등 발림성 클로즈업 컷 포함", "자연광에서 촬영"],
-      "upload": ["업로드 후 최소 3개월 유지", "업로드 전 담당자 컨펌 필수"],
-      "reels": ["", ""],
+      "make": [
+        "제품 패키지가 2초 이상 정면으로 보이게",
+        "손등 발림성 클로즈업 컷 포함",
+        "자연광에서 촬영"
+      ],
+      "upload": [
+        "업로드 후 최소 3개월 유지",
+        "업로드 전 담당자 컨펌 필수"
+      ],
+      "reels": [
+        "",
+        ""
+      ],
       "tierHashes": []
     },
     {
@@ -58,7 +98,10 @@
       "category": "뷰티",
       "make": [],
       "upload": [],
-      "reels": ["", ""],
+      "reels": [
+        "",
+        ""
+      ],
       "tierHashes": []
     }
   ]
