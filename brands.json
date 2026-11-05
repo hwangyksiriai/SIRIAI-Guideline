@@ -35,27 +35,6 @@
   ],
   "brands": [
     {
-      "id": "keepintouch",
-      "name": "Keepintouch",
-      "summary": "올영 프로모션 ㅋ블러셔",
-      "account": "@keepintouch",
-      "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
-      "hashNote": "-",
-      "reward": "블러셔",
-      "quota": "20명",
-      "deadline": "11.20 마감",
-      "hot": true,
-      "color": "#fbd5eb",
-      "category": "뷰티",
-      "make": [],
-      "upload": [],
-      "reels": [
-        "reels/hera-1-mw3aawae.mp4",
-        "reels/hera-2-mw3aazeu.mp4"
-      ],
-      "tierHashes": []
-    },
-    {
       "id": "tocobo",
       "name": "TOCOBO",
       "summary": "비건 선케어 — 가볍고 촉촉한 데일리 선크림",
@@ -80,6 +59,27 @@
       "reels": [
         "",
         ""
+      ],
+      "tierHashes": []
+    },
+    {
+      "id": "keepintouch",
+      "name": "Keepintouch",
+      "summary": "올영 프로모션 ㅋ블러셔",
+      "account": "@keepintouch",
+      "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
+      "hashNote": "-",
+      "reward": "블러셔",
+      "quota": "20명",
+      "deadline": "11.20 마감",
+      "hot": true,
+      "color": "#fbd5eb",
+      "category": "뷰티",
+      "make": [],
+      "upload": [],
+      "reels": [
+        "reels/hera-1-mw3aawae.mp4",
+        "reels/hera-2-mw3aazeu.mp4"
       ],
       "tierHashes": []
     },
