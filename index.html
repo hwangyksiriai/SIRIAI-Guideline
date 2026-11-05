@@ -102,11 +102,8 @@ body[data-view="apply"] #apply{ animation:fadeIn .35s cubic-bezier(.16,1,.3,1); 
 .saved-note{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:var(--muted); background:var(--card); border-radius:12px; padding:10px 12px; margin:0 0 14px; }
 .saved-note button{ background:none; border:none; color:var(--accent); font-weight:700; font-size:12px; cursor:pointer; padding:0; }
 
-.must{ font-style:normal; font-size:10.5px; font-weight:800; color:var(--accent); background:var(--accent-soft); padding:2px 7px; border-radius:999px; margin-left:6px; }
-.box.notice{ border-color:rgba(250,35,59,.35); background:rgba(250,35,59,.04); }
-.box.notice p{ font-size:13.5px; line-height:1.65; color:var(--muted); margin:-4px 0 0; }
-.box.notice p b{ color:var(--ink); }
-.box.notice .period{ color:var(--ink); font-weight:700; }
+.musts{ grid-column:1/-1; display:flex; flex-wrap:wrap; gap:6px; padding-top:12px; margin-top:4px; border-top:1px solid var(--line); }
+.must{ font-style:normal; font-size:11.5px; font-weight:800; color:var(--accent); background:var(--accent-soft); padding:5px 10px; border-radius:999px; }
 
 .box{ border:1px solid var(--line); border-radius:16px; padding:18px 16px; }
 .facts{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
@@ -327,7 +324,8 @@ function renderGuide(){
       `<button class="bchip${x.id === b.id ? ' active' : ''}${x.closed ? ' closed' : ''}" data-brand="${x.id}">${esc(x.name)}${x.closed ? ' · 마감' : ''}</button>`).join('')}</div>` : ''}
     <div class="guide-body" key="${b.id}">
       <div class="reels">${b.reels.map((src, i) => reelCard(src, i)).join('')}</div>
-      <div class="box facts" style="grid-template-columns:repeat(${b.facts.length},minmax(0,1fr))">${b.facts.map(([k, v]) => `<div class="fact"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>
+      <div class="box facts" style="grid-template-columns:repeat(${b.facts.length},minmax(0,1fr))">${b.facts.map(([k, v]) => `<div class="fact"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}
+        ${b.secondaryUse || b.collab ? `<div class="musts">${b.secondaryUse ? '<em class="must">2차 활용 필수</em>' : ''}${b.collab ? '<em class="must">공동 작업자 필수</em>' : ''}</div>` : ''}</div>
 
       <div class="box">
         <h3 class="box-h">${svg('camera')}이렇게 제작해 주세요</h3>
@@ -341,11 +339,7 @@ function renderGuide(){
         <h3 class="box-h">${svg('upload')}이렇게 업로드해 주세요</h3>
         <div class="step"><span class="n">1</span>계정을 태그해 주세요</div>
         <div class="inner"><button class="copy" data-copy="${esc(b.account)}">${esc(b.account)}${svg('copy')}</button></div>
-        ${b.collab ? `<div class="step" style="margin-top:16px"><span class="n">2</span>공동 작업자로 초대해 주세요<em class="must">필수</em></div>
-        <div class="inner">
-          <div class="li">${svg('check')}<span>게시 전 <b>사람 태그 → 공동 작업자 초대</b>에서 <b>${esc(b.account)}</b> 계정을 초대해 주세요.</span></div>
-        </div>` : ''}
-        <div class="step" style="margin-top:16px"><span class="n">${b.collab ? 3 : 2}</span>캡션은 이렇게 작성해 주세요</div>
+        <div class="step" style="margin-top:16px"><span class="n">2</span>캡션은 이렇게 작성해 주세요</div>
         <div class="inner">
           <div class="inner-h"><span class="hash">#</span>필수 해시태그<button class="icon-copy" data-copy="${esc(b.hashtags)}" aria-label="해시태그 복사">${svg('copy')}</button></div>
           ${li(b.hashtags + (b.hashNote && !/^[-–—\s]*$/.test(b.hashNote) ? ` (${b.hashNote})` : ''))}
@@ -354,10 +348,6 @@ function renderGuide(){
         </div>
       </div>
 
-      ${b.secondaryUse ? `<div class="box notice">
-        <h3 class="box-h">${svg('shield')}2차 활용에 동의해 주세요<em class="must">필수</em></h3>
-        <p>업로드한 콘텐츠는 브랜드가 <b>광고·SNS·상세페이지 등에 2차 활용</b>할 수 있어요${b.secondaryPeriod ? ` <span class="period">(${esc(b.secondaryPeriod)})</span>` : ''}. 지원서에서 동의해 주셔야 지원할 수 있어요.</p>
-      </div>` : ''}
 
       ${b.closed
         ? `<button class="cta" disabled style="margin-top:6px">모집이 마감되었어요</button>`
@@ -448,17 +438,14 @@ function renderBrandChips(){
 
 /* 고른 브랜드의 필수 조건(공동 작업자·2차 활용) 동의 */
 function termsFor(list){
-  return { collab: list.some((b) => b.collab), secondary: list.some((b) => b.secondaryUse),
-    periods: [...new Set(list.filter((b) => b.secondaryUse && b.secondaryPeriod).map((b) => b.secondaryPeriod))] };
+  return { collab: list.some((b) => b.collab), secondary: list.some((b) => b.secondaryUse) };
 }
 function renderTerms(){
   const row = $('termsRow'); if (!row) return;
   const t = termsFor(openBrands().filter((b) => picked.has(b.id)));
-  const parts = [];
-  if (t.collab) parts.push('브랜드 계정을 <b>공동 작업자로 초대</b>하는 것');
-  if (t.secondary) parts.push(`업로드한 콘텐츠를 브랜드가 <b>2차 활용</b>${t.periods.length ? `(${esc(t.periods.join(', '))})` : ''}하는 것`);
+  const parts = [t.secondary && '2차 활용', t.collab && '공동 작업자'].filter(Boolean);
   row.hidden = !parts.length;
-  $('termsText').innerHTML = `<b style="color:var(--accent)">[필수]</b> ${parts.join('과 ')}에 동의합니다.`;
+  $('termsText').innerHTML = `<b style="color:var(--accent)">[필수]</b> ${parts.join(' · ')} 조건에 동의합니다.`;
 }
 
 async function onSubmit(e){
@@ -486,7 +473,7 @@ async function onSubmit(e){
   let msg = '';
   if (!data.brands.length) msg = '지원할 브랜드를 하나 이상 선택해주세요.';
   else if (bad.length) msg = '표시된 항목을 확인해주세요.';
-  else if (!$('termsRow').hidden && !$('f-terms').checked) msg = '공동 작업자 초대·2차 활용 조건에 동의해야 지원할 수 있어요.';
+  else if (!$('termsRow').hidden && !$('f-terms').checked) msg = '필수 조건에 동의해야 지원할 수 있어요.';
   else if (!$('f-agree').checked) msg = '개인정보 수집·이용에 동의해주세요.';
   err.textContent = msg; err.style.display = msg ? 'block' : 'none';
   if (msg) { (bad[0] || err).scrollIntoView({ block:'center', behavior:'smooth' }); return; }

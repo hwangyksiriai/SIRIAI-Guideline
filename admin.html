@@ -454,7 +454,7 @@ function renderPast(){ $('past').value = (DATA.pastBrands || []).join('\n'); }
 
 /* ── 편집 ── */
 const blank = () => ({ id:'', name:'', summary:'', account:'', hashtags:'#광고 ', hashNote:'광고 표기를 멘션 맨 앞에 배치', reward:'제품', deadline:'',
-  announce:'', status:'open', collab:true, secondaryUse:true, secondaryPeriod:'', hot:false, color:'#171310', category:'뷰티', make:[], upload:[], reels:['', ''], tierHashes:[] });
+  announce:'', status:'open', collab:true, secondaryUse:true, hot:false, color:'#171310', category:'뷰티', make:[], upload:[], reels:['', ''], tierHashes:[] });
 let editing = null;      // { isNew, orig, reels:[{path, file, url, removed}] }
 
 function slug(s){ return String(s).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 26); }
@@ -530,8 +530,7 @@ async function openEditor(id, dup){
       <label class="check"><input type="checkbox" name="collab" ${b.collab !== false ? 'checked' : ''}>공동 작업자 초대 필수</label>
       <label class="check"><input type="checkbox" name="secondaryUse" ${b.secondaryUse !== false ? 'checked' : ''}>2차 활용 동의 필수</label>
     </div>
-    <div class="field" style="margin-top:12px"><label>2차 활용 기간·범위</label><input class="input" name="secondaryPeriod" value="${esc(b.secondaryPeriod || '')}" placeholder="예) 업로드일로부터 6개월"><small>적으면 가이드와 지원서 동의 문구에 함께 보여요</small></div>
-    <p class="note">켜두면 가이드에 ‘필수’로 표시되고, 지원서에서 동의해야만 지원할 수 있어요. 동의 여부는 시트에 기록돼요.</p>
+    <p class="note">켜두면 가이드에 ‘필수’ 표시만 짧게 나가요. 자세한 내용은 실제 가이드라인으로 안내해주세요. 지원서에서 동의해야 지원할 수 있고, 동의 여부는 시트에 기록돼요.</p>
 
     <p class="sec">노출할 고료 링크</p>
     <div class="checks">${tierChecks}</div>
@@ -607,7 +606,7 @@ async function saveBrand(){
     account: v('account'), hashtags: v('hashtags'), hashNote: v('hashNote'),
     reward: v('reward') || '제품', deadline: v('deadline'), announce: v('announce'),
     status: f.querySelector('input[name=status]:checked')?.value || 'open',
-    collab: f.collab.checked, secondaryUse: f.secondaryUse.checked, secondaryPeriod: v('secondaryPeriod'),
+    collab: f.collab.checked, secondaryUse: f.secondaryUse.checked,
     hot: f.hot.checked, color: f.color.value, category: '뷰티',
     make: lines(f.make.value), upload: lines(f.upload.value),
     reels: ['', ''], tierHashes: [],
