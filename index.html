@@ -559,7 +559,7 @@ async function onSubmit(e){
     $('apply').innerHTML = `<div class="done-box">
       <div class="ok">${svg('check')}</div>
       <h3>지원이 완료되었어요</h3>
-      <p>${esc(data.brands.join(', '))} 캠페인 지원이 접수되었습니다.<br>선정되시면 ${esc(data.phone)} 로 연락드릴게요.${ann.length ? `<br><b style="color:var(--ink)">선정 발표</b> · ${esc(ann.join(' / '))}` : ''}</p>
+      <p>${esc(data.brands.join(', '))} 캠페인 지원이 접수되었습니다.<br>브랜드 선정 후 SIRIAI에서 개별 안내드릴게요.${ann.length ? `<br><b style="color:var(--ink)">선정 발표</b> · ${esc(ann.join(' / '))}` : ''}</p>
       ${openBrands().length > chosen.length ? `<button class="ghost" id="again">다른 캠페인도 보기</button>` : ''}</div>`;
     $('again')?.addEventListener('click', () => { renderApply(); openSheet(); });
   } catch {
