@@ -35,27 +35,25 @@
   ],
   "brands": [
     {
-      "id": "hera",
-      "name": "HERA",
-      "summary": "리플렉션 스킨글로우 파운데이션 — 맑은 상앗빛 피부 표현",
-      "account": "@herabeauty_official",
-      "hashtags": "#광고 #헤라 #리플렉션스킨글로우파운데이션 #맑은상앗빛 #헤라파데",
-      "hashNote": "광고 표기를 멘션 맨 앞에 배치",
-      "reward": "제품",
-      "quota": "10명",
+      "id": "keepintouch",
+      "name": "Keepintouch",
+      "summary": "올영 프로모션 ㅋ블러셔",
+      "account": "@keepintouch",
+      "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
+      "hashNote": "-",
+      "reward": "블러셔",
+      "quota": "20명",
       "deadline": "11.20 마감",
       "hot": true,
-      "color": "#171310",
+      "color": "#fbd5eb",
       "category": "뷰티",
       "make": [],
       "upload": [],
       "reels": [
-        "",
-        ""
+        "reels/hera-1-mw3aawae.mp4",
+        "reels/hera-2-mw3aazeu.mp4"
       ],
-      "tierHashes": [
-        "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f"
-      ]
+      "tierHashes": []
     },
     {
       "id": "tocobo",

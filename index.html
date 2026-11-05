@@ -335,7 +335,7 @@ function renderGuide(){
         <div class="step" style="margin-top:16px"><span class="n">2</span>캡션은 이렇게 작성해 주세요</div>
         <div class="inner">
           <div class="inner-h"><span class="hash">#</span>필수 해시태그<button class="icon-copy" data-copy="${esc(b.hashtags)}" aria-label="해시태그 복사">${svg('copy')}</button></div>
-          ${li(b.hashtags + (b.hashNote ? ` (${b.hashNote})` : ''))}
+          ${li(b.hashtags + (b.hashNote && !/^[-–—\s]*$/.test(b.hashNote) ? ` (${b.hashNote})` : ''))}
           <div class="inner-h" style="margin-top:6px"><span class="ok">${svg('check')}</span>필수사항</div>
           ${b.upload.map(li).join('')}
         </div>
