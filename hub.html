@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Siriai Hub</title>
+<link rel="icon" href="assets/symbol-black.png">
+<style>
+:root{
+  --bg:#ffffff; --ink:#171310; --muted:#6f6a5c; --accent:#fa233b;
+  --line:#e4ded2; --card:#f5f2ec; --accent-soft:rgba(250,35,59,.14); --shell-bg:#ebeae7;
+  --font:-apple-system,"SF Pro Text","Inter Tight","Noto Sans KR",Helvetica,Arial,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{ background:var(--shell-bg); color:var(--ink); font-family:var(--font); word-break:keep-all; letter-spacing:-.01em; -webkit-font-smoothing:antialiased; }
+button,input{ font-family:inherit; }
+[hidden]{ display:none !important; }
+
+/* ── 잠금 화면 ── */
+.lock{ min-height:100svh; display:flex; align-items:center; justify-content:center; padding:16px; }
+.lock-card{ width:100%; max-width:360px; background:var(--bg); border-radius:20px; padding:40px 24px 32px; text-align:center; }
+.lock-card .sym{ width:56px; height:56px; display:block; margin:0 auto 18px; filter:drop-shadow(0 10px 20px rgba(0,0,0,.14)); }
+.lock-card h1{ font-size:20px; margin:0 0 6px; letter-spacing:-.02em; }
+.lock-card p{ font-size:13px; color:var(--muted); margin:0 0 24px; }
+.pin{ display:flex; justify-content:center; gap:10px; margin-bottom:14px; }
+.pin input{ width:52px; height:60px; text-align:center; font-size:24px; font-weight:800; border-radius:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); outline:none; transition:border-color .15s, background .15s; -webkit-text-security:disc; }
+.pin input:focus{ border-color:var(--accent); background:#fff; }
+.pin.shake{ animation:shake .4s; }
+.pin.shake input{ border-color:var(--accent); }
+@keyframes shake{ 20%,60%{ transform:translateX(-8px); } 40%,80%{ transform:translateX(8px); } }
+.lock-err{ font-size:12.5px; color:var(--accent); min-height:18px; margin:0; }
+
+/* ── 허브 ── */
+.shell{ max-width:640px; margin:0 auto; padding:8px; display:flex; flex-direction:column; gap:8px; }
+.topbar{ position:sticky; top:8px; z-index:10; display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--bg); border-radius:16px; }
+.topbar .mark{ width:24px; height:24px; }
+.topbar .word{ height:14px; }
+.topbar .tag{ font-size:11px; font-weight:800; color:var(--accent); background:var(--accent-soft); padding:4px 9px; border-radius:999px; letter-spacing:.04em; }
+.topbar .out{ margin-left:auto; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:12px; font-weight:700; color:var(--muted); cursor:pointer; }
+.card{ background:var(--bg); border-radius:16px; padding:24px 20px; }
+.eyebrow{ font-size:11px; font-weight:800; color:var(--accent); letter-spacing:.06em; margin:0 0 8px; }
+h2{ font-size:22px; letter-spacing:-.02em; margin:0 0 6px; }
+.desc{ font-size:13px; color:var(--muted); line-height:1.6; margin:0 0 18px; }
+
+.tier{ border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:10px; }
+.tier-top{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.tier-top b{ font-size:15px; }
+.code{ font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; background:var(--card); color:var(--muted); letter-spacing:.04em; }
+.brands{ margin-left:auto; font-size:11.5px; color:var(--muted); text-align:right; }
+.url{ display:block; width:100%; font-size:12.5px; color:var(--ink); background:var(--card); border-radius:10px; padding:10px 12px; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.actions{ display:flex; gap:8px; }
+.btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px; border-radius:999px; border:1px solid var(--line); background:#fff; font-size:13px; font-weight:700; color:var(--ink); cursor:pointer; text-decoration:none; }
+.btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.btn svg{ width:15px; height:15px; stroke:currentColor; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+
+.how{ font-size:13px; line-height:1.7; color:var(--muted); margin:0; padding-left:18px; }
+.how li{ margin-bottom:6px; }
+.how b{ color:var(--ink); }
+pre{ background:var(--card); border-radius:12px; padding:14px; font-size:12px; line-height:1.6; overflow-x:auto; margin:12px 0 0; color:var(--ink); }
+.toast{ position:fixed; bottom:24px; left:50%; transform:translate(-50%,10px); background:var(--ink); color:#fff; font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; }
+.toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+
+<!-- 잠금 화면 -->
+<main class="lock" id="lock">
+  <form class="lock-card" id="lockForm" autocomplete="off">
+    <img class="sym" src="assets/symbol-black.png" alt="">
+    <h1>Siriai Hub</h1>
+    <p>내부용 페이지예요. 비밀번호 4자리를 입력해주세요.</p>
+    <div class="pin" id="pin">
+      <input inputmode="numeric" maxlength="1" aria-label="비밀번호 1번째">
+      <input inputmode="numeric" maxlength="1" aria-label="비밀번호 2번째">
+      <input inputmode="numeric" maxlength="1" aria-label="비밀번호 3번째">
+      <input inputmode="numeric" maxlength="1" aria-label="비밀번호 4번째">
+    </div>
+    <p class="lock-err" id="lockErr"></p>
+  </form>
+</main>
+
+<!-- 허브 (잠금 해제 후) -->
+<div class="shell" id="hub" hidden>
+  <header class="topbar">
+    <img class="mark" src="assets/symbol-black.png" alt="">
+    <img class="word" src="assets/logo-wordmark.png" alt="Siriai">
+    <span class="tag">HUB</span>
+    <button class="out" id="logout">잠그기</button>
+  </header>
+
+  <section class="card">
+    <p class="eyebrow">GUIDE LINKS</p>
+    <h2>고료별 가이드라인 링크</h2>
+    <p class="desc">인플루언서에게 맞는 고료의 링크를 보내주세요. 링크 안에서는 고료가 보이지 않고, 허브로 돌아오는 길도 없어요.</p>
+    <div id="tiers"></div>
+  </section>
+
+  <section class="card">
+    <p class="eyebrow">HOW TO</p>
+    <h2>운영 방법</h2>
+    <ol class="how">
+      <li><b>고료 금액</b>은 구글 시트 <b>'고료표'</b> 탭에만 적어요. 페이지 코드·구간·최소/최대 팔로워·고료를 맞춰두면, 지원서에 고료가 자동으로 붙어요.</li>
+      <li>지원자가 적은 팔로워 수가 링크의 구간과 다르면 시트 <b>'확인'</b> 칸에 표시돼요. 다른 구간 링크로 지원한 경우를 걸러낼 수 있어요.</li>
+      <li><b>구간 추가</b>: 아래 TIERS 목록과 시트 '고료표'에 같은 코드를 추가하세요. 코드는 금액·팔로워 수가 드러나지 않는 문자열로 정해요.</li>
+      <li><b>브랜드 추가</b>: 가이드라인 파일(index.html)의 ALL_BRANDS에 블록 하나를 추가하세요.</li>
+    </ol>
+<pre>{
+  id: 'brand',            // 영문, 필수
+  name: 'BRAND',          // 필수
+  summary: '한 줄 소개',   // 필수
+  type: '릴스 20초 이상',  // 필수
+  account: '@brand_official',
+  hashtags: '#광고 #브랜드',
+  // 선택 — 비우면 기본값
+  make: [], upload: [],   // → "별도 가이드로 전달 예정입니다."
+  reels: ['', ''],        // 레퍼런스 영상·이미지 경로
+  reward: '제품',          // ※ 금액 적지 않기 (공개됨)
+  quota: '10명', deadline: '11.30 마감',
+  tiers: ['a3f', 'k8d'],  // 이 링크에서만 노출. 없으면 전체
+}</pre>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* 고료별 페이지 코드 — 코드는 뜻이 드러나지 않게 (인플루언서 링크에 보임) */
+const TIERS = [
+  { code: 'a3f', label: '고료 5만원' },
+  { code: 'k8d', label: '고료 10만원' },
+  { code: 'w5n', label: '고료 20만원' },
+];
+
+const PIN_HASH = '9a067887f0b0f5d91bc3ab1c59f4c9ad9a636740568658e8a7935e08d0b5e346';
+const KEY = 'siriai-hub-ok';
+const $ = (id) => document.getElementById(id);
+
+async function sha256(s){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ── 잠금 ── */
+const inputs = [...document.querySelectorAll('#pin input')];
+inputs.forEach((el, i) => {
+  el.addEventListener('input', () => {
+    el.value = el.value.replace(/\D/g, '').slice(-1);
+    if (el.value && i < 3) inputs[i + 1].focus();
+    if (inputs.every((x) => x.value)) check();
+  });
+  el.addEventListener('keydown', (e) => { if (e.key === 'Backspace' && !el.value && i > 0) inputs[i - 1].focus(); });
+  el.addEventListener('paste', (e) => {
+    const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
+    if (!d) return; e.preventDefault();
+    d.split('').forEach((c, j) => { inputs[j].value = c; });
+    if (d.length === 4) check(); else inputs[d.length].focus();
+  });
+});
+$('lockForm').addEventListener('submit', (e) => { e.preventDefault(); check(); });
+
+let fails = 0, waitUntil = 0;
+async function check(){
+  if (Date.now() < waitUntil) return;
+  const pin = inputs.map((x) => x.value).join('');
+  if (await sha256('siriai-hub:' + pin) === PIN_HASH) {
+    try { sessionStorage.setItem(KEY, PIN_HASH); } catch {}
+    unlock();
+  } else {
+    fails++;
+    const box = $('pin'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+    inputs.forEach((x) => { x.value = ''; }); inputs[0].focus();
+    if (fails >= 5) { waitUntil = Date.now() + 30000; $('lockErr').textContent = '여러 번 틀렸어요. 30초 후 다시 시도해주세요.'; fails = 0; }
+    else $('lockErr').textContent = '비밀번호가 맞지 않아요.';
+  }
+}
+
+function unlock(){
+  $('lock').hidden = true; $('hub').hidden = false;
+  renderTiers();
+}
+$('logout').onclick = () => { try { sessionStorage.removeItem(KEY); } catch {} location.reload(); };
+
+/* ── 허브 ── */
+function linkFor(code){
+  const u = new URL('./', location.href);
+  u.search = '?p=' + encodeURIComponent(code);
+  return u.href;
+}
+function renderTiers(){
+  $('tiers').innerHTML = TIERS.map((t) => {
+    const url = linkFor(t.code);
+    return `<div class="tier">
+      <div class="tier-top"><b>${t.label}</b><span class="code">${t.code}</span><span class="brands" data-brands="${t.code}">브랜드 확인 중…</span></div>
+      <span class="url">${url}</span>
+      <div class="actions">
+        <button class="btn" data-copy="${url}"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>링크 복사</button>
+        <a class="btn primary" href="${url}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>새 탭에서 보기</a>
+      </div>
+    </div>`;
+  }).join('');
+  loadBrands();
+}
+
+/* 각 링크를 보이지 않게 열어서, 그 링크에서 실제로 보이는 브랜드를 읽어와요.
+   (가이드라인 파일의 브랜드·tiers 를 바꾸면 허브에도 자동 반영) */
+async function loadBrands(){
+  for (const t of TIERS) {
+    const el = document.querySelector(`[data-brands="${t.code}"]`);
+    const names = await new Promise((resolve) => {
+      const f = document.createElement('iframe');
+      f.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0';
+      f.src = linkFor(t.code);
+      const done = (v) => { f.remove(); resolve(v); };
+      f.onload = () => {
+        try { done([...f.contentDocument.querySelectorAll('.nav-item[data-brand]')].map((b) => b.textContent.trim())); }
+        catch { done(null); }
+      };
+      setTimeout(() => done(null), 5000);
+      document.body.appendChild(f);
+    });
+    if (el) el.textContent = names ? names.join(' · ') : '';
+  }
+}
+document.addEventListener('click', async (e) => {
+  const c = e.target.closest('[data-copy]'); if (!c) return;
+  try { await navigator.clipboard.writeText(c.dataset.copy); } catch {}
+  const t = $('toast'); t.textContent = '링크를 복사했어요'; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1300);
+});
+
+let ok = false;
+try { ok = sessionStorage.getItem(KEY) === PIN_HASH; } catch {}
+if (ok) unlock(); else inputs[0].focus();
+</script>
+</body>
+</html>
