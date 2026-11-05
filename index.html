@@ -217,7 +217,7 @@ const ALL_BRANDS = [
   {
     id: 'hera', name: 'HERA', color: '#171310', deadline: '11.20 마감', hot: true,
     summary: '리플렉션 스킨글로우 파운데이션 — 맑은 상앗빛 피부 표현',
-    type: '릴스 20초 이상', reward: '제품',quota: '10명',
+    reward: '제품', quota: '10명',
     keywords: ['스킨글로우', '맑은 상앗빛', '광채 베이스', '얇은 밀착력', '헤라파데'],
     account: '@herabeauty_official',
     hashtags: '#광고 #헤라 #리플렉션스킨글로우파운데이션 #맑은상앗빛 #헤라파데',
@@ -225,7 +225,7 @@ const ALL_BRANDS = [
   {
     id: 'tocobo', name: 'TOCOBO', color: '#e8738a', deadline: '11.27 마감',
     summary: '비건 선케어 — 가볍고 촉촉한 데일리 선크림',
-    type: '릴스 15초 이상', reward: '제품', quota: '20명',
+    reward: '제품', quota: '20명',
     keywords: ['비건 선케어', '백탁 없는', '촉촉한 마무리', '데일리 선크림'],
     account: '@tocobo_official',
     hashtags: '#광고 #토코보 #비건선크림 #데일리선크림',
@@ -235,7 +235,6 @@ const ALL_BRANDS = [
   {
     id: 'offlow', name: 'OFFLOW', color: '#7a6bd8',
     summary: '컬러 립 틴트 — 맑은 발색의 데일리 립',
-    type: '피드 or 릴스',
     account: '@offlow_official',
     hashtags: '#광고 #오프로우 #립틴트 #데일리립',
   },
@@ -249,7 +248,7 @@ const ALL_BRANDS = [
     make: b.make?.length ? b.make : TBD,
     upload: b.upload?.length ? b.upload : TBD,
     reels: [0, 1].map((i) => (b.reels || [])[i] || ''),
-    facts: [['유형', b.type], ['제공', b.reward || '제품'], ['모집', b.quota || '상시']],
+    facts: [['유형', '릴스'],['제공', b.reward || '제품'], ['모집', b.quota || '상시']],
   };
 });
 const BRANDS = ALL_BRANDS.filter((b) => !b.tiers?.length || b.tiers.includes(PAGE));
