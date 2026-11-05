@@ -59,6 +59,17 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
   .item .txt span{ white-space:normal; }
   .item .ops{ width:100%; justify-content:flex-end; padding-top:10px; border-top:1px solid var(--line); }
 }
+.meta em.closed{ background:#ebeae7; color:var(--muted); text-decoration:line-through; }
+.meta em.hidden{ background:var(--ink); color:#fff; }
+.item.dim{ opacity:.6; }
+.gh-state.warn .dot{ background:var(--accent); }
+.ig-in{ font-size:12.5px; padding:9px 11px; }
+/* 링크 팝업 */
+.links{ display:flex; flex-direction:column; gap:8px; }
+.link-row{ display:flex; align-items:center; gap:10px; padding:12px; border:1px solid var(--line); border-radius:12px; }
+.link-row b{ font-size:14px; flex:0 0 auto; }
+.link-row span{ flex:1; min-width:0; font-size:11.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.link-row .btn{ flex:0 0 auto; padding:8px 12px; font-size:12px; }
 .empty{ text-align:center; padding:28px 10px; color:var(--muted); font-size:13px; border:1px dashed var(--line); border-radius:14px; }
 .head{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:14px; }
 .head .btn{ flex:0 0 auto; }
@@ -117,6 +128,9 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
   <!-- GitHub 연결 -->
   <section class="card" id="ghCard"></section>
 
+  <!-- 지원서 접수 연결 -->
+  <section class="card" id="sheetCard"></section>
+
   <!-- 진행 중인 캠페인 -->
   <section class="card">
     <div class="head">
@@ -160,6 +174,8 @@ const ICON = {
   edit: '<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="M13.5 6.5l4 4"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
   x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
+  dup: '<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
 };
 const svg = (k) => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
 
@@ -251,7 +267,7 @@ async function commitChange({ mutate, files = [], deletes = [], message }){
       ...blobs.map((b) => ({ path: b.path, mode:'100644', type:'blob', sha: b.sha })),
       { path:'brands.json', mode:'100644', type:'blob', sha: json.sha },
     ];
-    for (const p of (typeof deletes === 'function' ? deletes() : deletes)) {
+    for (const p of (typeof deletes === 'function' ? deletes(latest) : deletes)) {
       try { await gh(`/contents/${p.split('/').map(encodeURIComponent).join('/')}?ref=${head}`); tree.push({ path: p, mode:'100644', type:'blob', sha: null }); }
       catch (e) { if (e.status !== 404) throw e; }
     }
@@ -270,6 +286,8 @@ async function commitChange({ mutate, files = [], deletes = [], message }){
 
 /* 편집 시작 시점의 브랜드와 지금 GitHub의 브랜드가 같은지 */
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+/* 다른 브랜드(복제본 등)가 아직 쓰는 파일은 지우지 않기 */
+const unused = (paths, d) => { const used = new Set(d.brands.flatMap((x) => x.reels || [])); return paths.filter((p) => p?.startsWith('reels/') && !used.has(p)); };
 
 /* ── GitHub 연결 카드 ── */
 function renderGh(){
@@ -306,7 +324,7 @@ async function connect(){
     try { ghUser = (await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json())).login || ''; } catch {}
     try { localStorage.setItem(TOKEN_KEY, token); localStorage.setItem(TOKEN_KEY + '-user', ghUser); } catch {}
     await loadData();
-    renderGh(); renderList(); renderPast();
+    renderGh(); renderSheetCard(); renderList(); renderPast();
     toast('GitHub에 연결했어요');
   } catch (e) {
     token = '';
@@ -325,47 +343,157 @@ function tierLabels(b){
   if (!b.tierHashes?.length) return ['모든 링크'];
   return TIERS.filter((t) => b.tierHashes.includes(TIER_HASH[t.code])).map((t) => t.label);
 }
+const STATUS = { open: '모집중', closed: '마감', hidden: '숨김' };
 function renderList(){
   const L = DATA.brands;
-  $('list').innerHTML = L.length ? L.map((b, i) => `
-    <div class="item">
+  $('list').innerHTML = L.length ? L.map((b, i) => {
+    const st = b.status || 'open';
+    return `
+    <div class="item${st === 'open' ? '' : ' dim'}">
       <span class="mono" style="background:${esc(b.color || '#171310')}">${esc((b.name || '?').slice(0, 2))}</span>
       <div class="txt"><b>${esc(b.name)}</b><span>${esc(b.summary)}</span>
-        <div class="meta"><em class="${b.hot ? 'hot' : ''}">${esc(b.deadline || '상시 모집')}</em><em>릴스 ${(b.reels || []).filter(Boolean).length}/2</em>${tierLabels(b).map((l) => `<em>${esc(l)}</em>`).join('')}</div></div>
+        <div class="meta">${st === 'open' ? `<em class="${b.hot ? 'hot' : ''}">${esc(b.deadline || '상시 모집')}</em>` : `<em class="${st}">${STATUS[st]}</em>`}<em>레퍼런스 ${(b.reels || []).filter(Boolean).length}/2</em>${tierLabels(b).map((l) => `<em>${esc(l)}</em>`).join('')}</div></div>
       <div class="ops">
+        <button class="icon" data-links="${esc(b.id)}" aria-label="보낼 링크" title="보낼 링크">${svg('link')}</button>
+        <button class="icon" data-dup="${esc(b.id)}" aria-label="복제해서 새 캠페인" title="복제해서 새 캠페인">${svg('dup')}</button>
         <button class="icon" data-move="${i}:-1" ${i === 0 ? 'disabled' : ''} aria-label="위로">${svg('up')}</button>
         <button class="icon" data-move="${i}:1" ${i === L.length - 1 ? 'disabled' : ''} aria-label="아래로">${svg('down')}</button>
         <button class="icon" data-edit="${esc(b.id)}" aria-label="수정">${svg('edit')}</button>
         <button class="icon danger" data-del="${esc(b.id)}" aria-label="삭제">${svg('trash')}</button>
       </div>
-    </div>`).join('') : `<div class="empty">진행 중인 캠페인이 없어요.<br>‘새 브랜드’로 추가해주세요.</div>`;
+    </div>`; }).join('') : `<div class="empty">진행 중인 캠페인이 없어요.<br>‘새 브랜드’로 추가해주세요.</div>`;
+}
+
+/* ── 브랜드별 보낼 링크 (고료 링크 + 그 브랜드로 바로) ── */
+function openLinks(id){
+  const b = DATA.brands.find((x) => x.id === id); if (!b) return;
+  const base = new URL('./', location.href).href;
+  const tiers = TIERS.filter((t) => !b.tierHashes?.length || b.tierHashes.includes(TIER_HASH[t.code]));
+  const st = b.status || 'open';
+  $('editorRoot').innerHTML = `<div class="overlay" id="ov"><div class="editor">
+    <h2>${esc(b.name)} 보낼 링크<button type="button" class="icon close" id="edClose" aria-label="닫기">${svg('x')}</button></h2>
+    <p class="desc">인플루언서에게 맞는 고료의 링크를 보내주세요. 열면 소개 화면을 건너뛰고 <b>${esc(b.name)}</b> 가이드가 바로 보여요.</p>
+    ${st !== 'open' ? `<div class="gh-state warn" style="margin-bottom:12px"><span class="dot"></span><span>지금 <b>${STATUS[st]}</b> 상태예요. ${st === 'hidden' ? '링크를 열어도 이 브랜드는 안 보여요.' : '가이드는 보이지만 지원은 막혀 있어요.'}</span></div>` : ''}
+    <div class="links">${tiers.map((t) => {
+      const url = `${base}?p=${encodeURIComponent(t.code)}#${encodeURIComponent(b.id)}`;
+      return `<div class="link-row"><b>${esc(t.label)}</b><span>${esc(url)}</span><button class="btn primary" data-copylink="${esc(url)}">복사</button></div>`;
+    }).join('') || '<div class="empty">이 브랜드가 노출되는 고료 링크가 없어요.</div>'}</div>
+    <div class="editor-foot"><button type="button" class="btn" id="edCancel">닫기</button></div>
+  </div></div>`;
+  $('edClose').onclick = $('edCancel').onclick = () => { $('editorRoot').innerHTML = ''; document.body.style.overflow = ''; };
+  $('ov').addEventListener('click', (e) => { if (e.target.id === 'ov') $('edCancel').click(); });
+  document.body.style.overflow = 'hidden';
+}
+
+/* ── 지원서 접수(구글 시트) 연결 ── */
+const EXEC_RE = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
+const GS_URL = `https://github.com/${REPO.owner}/${REPO.name}/blob/${REPO.branch}/google-apps-script.gs`;
+function renderSheetCard(){
+  const url = DATA.settings?.submitUrl || '';
+  const card = $('sheetCard');
+  if (url) {
+    card.innerHTML = `<p class="eyebrow">APPLICATIONS</p><h2>지원서 접수</h2>
+      <div class="gh-state ok"><span class="dot"></span><span><b>구글 시트로 접수 중</b></span></div>
+      <p class="note" style="word-break:break-all">${esc(url)}</p>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn" id="sheetTest">테스트 접수 보내기</button>
+        <button class="btn" id="sheetEdit">주소 바꾸기</button>
+      </div>
+      <p class="note">테스트 접수는 시트에 상태 ‘테스트’로 한 줄 들어가요. 확인 후 지워도 돼요.</p>`;
+    $('sheetTest').onclick = () => testSheet(url, true);
+    $('sheetEdit').onclick = () => { DATA.__editSheet = true; renderSheetForm(url); };
+    if (!DATA.__editSheet) return;
+  }
+  renderSheetForm(url);
+}
+function renderSheetForm(url){
+  $('sheetCard').innerHTML = `<p class="eyebrow">APPLICATIONS</p><h2>${url ? '접수 주소 바꾸기' : '지원서 접수가 아직 연결되지 않았어요'}</h2>
+    ${url ? '' : `<div class="gh-state warn" style="margin:10px 0 4px"><span class="dot"></span><span>지금은 인플루언서가 지원 버튼을 눌러도 <b>접수되지 않아요.</b> 화면에 ‘접수 준비 중’으로 안내돼요.</span></div>`}
+    <ol class="steps">
+      <li>구글 드라이브에서 <b>새 스프레드시트</b>를 만들어요. (이름 예: 시리아이 캠페인 지원서)</li>
+      <li>메뉴 <b>확장 프로그램 → Apps Script</b>를 열고, 있던 코드를 지운 뒤 <a href="${GS_URL}" target="_blank" rel="noopener noreferrer">접수 코드</a>를 통째로 붙여넣고 저장해요.</li>
+      <li>새 지원을 메일로 받고 싶으면 맨 위 <b>NOTIFY_EMAIL</b> 에 메일 주소를 적어요.</li>
+      <li>오른쪽 위 <b>배포 → 새 배포</b> → 톱니바퀴에서 <b>웹 앱</b> → 실행: <b>나</b>, 액세스: <b>모든 사용자</b> → 배포 → 권한 허용</li>
+      <li>나온 <b>웹 앱 URL</b>(…/exec)을 아래에 붙여넣고 <b>테스트 후 저장</b>을 눌러요.</li>
+    </ol>
+    <div class="row"><input class="input" id="sheetUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(url)}" spellcheck="false"><button class="btn primary" id="sheetSave" style="flex:0 0 auto">테스트 후 저장</button></div>
+    ${url ? `<div class="actions" style="margin-top:10px"><button class="btn" id="sheetCancel">취소</button></div>` : ''}
+    <p class="note">저장하면 1분쯤 뒤 사이트에 반영되고, 그때부터 지원서가 시트로 들어가요.</p>`;
+  $('sheetSave').onclick = saveSheetUrl;
+  if (url) $('sheetCancel').onclick = () => { DATA.__editSheet = false; renderSheetCard(); };
+}
+async function testSheet(url, notify){
+  busy('시트로 테스트 접수 보내는 중…');
+  try {
+    const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify({ test: true, brands: ['연결 테스트'], brandIds: ['test'], name: '어드민 테스트', phone: '010-0000-0000',
+        instagram: '@siriai_test', followers: '0', email: '', address: '', message: '어드민 연결 테스트', page: '', submittedAt: new Date().toISOString() }) });
+    const out = await res.json();
+    if (out.ok !== true) throw new Error(out.error || 'not ok');
+    if (notify) toast('시트에 테스트 줄이 들어갔어요 (상태: 테스트)');
+    return true;
+  } catch (e) {
+    toast('시트가 응답하지 않아요. 웹 앱 액세스가 ‘모든 사용자’인지, 주소가 /exec 로 끝나는지 확인해주세요.', true);
+    return false;
+  } finally { idle(); }
+}
+async function saveSheetUrl(){
+  if (needToken()) return;
+  const url = $('sheetUrl').value.trim();
+  if (!EXEC_RE.test(url)) { $('sheetUrl').classList.add('bad'); return toast('https://script.google.com/macros/s/…/exec 형태의 주소를 붙여넣어주세요', true); }
+  if (!(await testSheet(url, false))) return;
+  busy('저장 중…');
+  try {
+    await commitChange({ message: 'admin: 지원서 접수(구글 시트) 연결', mutate: (d) => { d.settings = { ...(d.settings || {}), submitUrl: url }; } });
+    DATA.__editSheet = false; renderSheetCard();
+    toast('연결했어요. 시트에 테스트 줄이 들어갔는지 확인해보세요. 1분쯤 뒤부터 지원서가 접수돼요');
+  } catch (e) { toast(errMsg(e), true); }
+  finally { idle(); }
 }
 function renderPast(){ $('past').value = (DATA.pastBrands || []).join('\n'); }
 
 /* ── 편집 ── */
 const blank = () => ({ id:'', name:'', summary:'', account:'', hashtags:'#광고 ', hashNote:'광고 표기를 멘션 맨 앞에 배치', reward:'제품', quota:'', deadline:'',
-  hot:false, color:'#171310', category:'뷰티', make:[], upload:[], reels:['', ''], tierHashes:[] });
+  announce:'', status:'open', hot:false, color:'#171310', category:'뷰티', make:[], upload:[], reels:['', ''], tierHashes:[] });
 let editing = null;      // { isNew, orig, reels:[{path, file, url, removed}] }
 
-function slug(s){ return String(s).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30); }
+function slug(s){ return String(s).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 26); }
+/* 겹치지 않는 ID: 'tocobo' 가 있으면 'tocobo-2', 한글만 있는 이름이면 'brand-xxxx' */
+function uniqueId(name){
+  let base = slug(name);
+  if (base.length < 2) base = 'brand-' + Math.random().toString(36).slice(2, 6);
+  const taken = new Set(DATA.brands.map((b) => b.id));
+  if (!taken.has(base)) return base;
+  for (let i = 2; ; i++) if (!taken.has(`${base}-${i}`)) return `${base}-${i}`;
+}
 
-async function openEditor(id){
+async function openEditor(id, dup){
   /* 다른 탭·기기에서 바뀌었을 수 있으니 항상 최신본으로 열기 */
   if (token) {
     busy('최신 내용 불러오는 중…');
-    try { await loadData(); renderList(); renderPast(); }
+    try { await loadData(); renderList(); renderPast(); renderSheetCard(); }
     catch (e) { idle(); return toast(errMsg(e), true); }
     idle();
   }
-  const orig = id ? DATA.brands.find((b) => b.id === id) : null;
-  if (id && !orig) return toast('이미 삭제된 브랜드예요', true);
-  const b = { ...blank(), ...(orig || {}) };
+  const src = id ? DATA.brands.find((b) => b.id === id) : null;
+  if (id && !src) return toast('이미 삭제된 브랜드예요', true);
+  /* 복제: 내용은 그대로, 새 브랜드로 (이름·ID·마감·발표는 비움) */
+  const orig = dup ? null : src;
+  const b = { ...blank(), ...(src || {}) };
+  if (dup) Object.assign(b, { id: '', name: '', deadline: '', announce: '', status: 'open' });
   b.reels = [0, 1].map((i) => (b.reels || [])[i] || '');
   editing = { isNew: !orig, origId: orig?.id || '', base: orig ? JSON.parse(JSON.stringify(orig)) : null,
-    reels: b.reels.map((p) => ({ path: p, file: null, url: '', removed: false })) };
+    reels: b.reels.map((p) => /^https?:\/\//i.test(p) ? { path: '', link: p, file: null, url: '', removed: false } : { path: p, link: '', file: null, url: '', removed: false }) };
   const tierChecks = TIERS.map((t) => `<label class="check"><input type="checkbox" name="tier" value="${esc(t.code)}" ${b.tierHashes?.includes(TIER_HASH[t.code]) ? 'checked' : ''}>${esc(t.label)}</label>`).join('');
   $('editorRoot').innerHTML = `<div class="overlay" id="ov"><form class="editor" id="ed" novalidate>
-    <h2>${editing.isNew ? '새 브랜드' : esc(b.name) + ' 수정'}<button type="button" class="icon close" id="edClose" aria-label="닫기">${svg('x')}</button></h2>
+    <h2>${dup ? `${esc(src.name)} 복제해서 새 캠페인` : editing.isNew ? '새 브랜드' : esc(b.name) + ' 수정'}<button type="button" class="icon close" id="edClose" aria-label="닫기">${svg('x')}</button></h2>
+    ${dup ? `<p class="desc">내용을 그대로 가져왔어요. 브랜드명과 바뀐 부분만 고쳐서 저장하세요.</p>` : ''}
+
+    <p class="sec">모집 상태</p>
+    <div class="checks">
+      ${Object.entries(STATUS).map(([k, l]) => `<label class="check"><input type="radio" name="status" value="${k}" ${(b.status || 'open') === k ? 'checked' : ''}>${l}</label>`).join('')}
+    </div>
+    <p class="note">마감: 가이드는 보이지만 지원은 막혀요. 숨김: 인플루언서 화면에서 사라져요. 삭제하지 않아도 돼요.</p>
 
     <p class="sec">기본 정보</p>
     <div class="grid2">
@@ -379,6 +507,7 @@ async function openEditor(id){
       <div class="field"><label>모집 인원</label><input class="input" name="quota" value="${esc(b.quota)}" placeholder="10명"></div>
       <div class="field"><label>마감</label><input class="input" name="deadline" value="${esc(b.deadline)}" placeholder="11.30 마감"><small>비우면 ‘상시 모집’</small></div>
     </div>
+    <div class="field"><label>선정 발표</label><input class="input" name="announce" value="${esc(b.announce || '')}" placeholder="예) 11.25 개별 연락"><small>적으면 가이드와 지원 완료 화면에 보여요</small></div>
     <div class="grid2">
       <div class="field"><label>목록 아이콘 색</label><input class="input" name="color" type="color" value="${esc(b.color || '#171310')}" style="height:46px;padding:4px"></div>
       <div class="field"><label>마감 강조</label><label class="check"><input type="checkbox" name="hot" ${b.hot ? 'checked' : ''}>마감일을 빨갛게 표시</label></div>
@@ -386,7 +515,7 @@ async function openEditor(id){
 
     <p class="sec">레퍼런스 릴스</p>
     <div class="reels" id="reelSlots"></div>
-    <p class="note">세로 영상(mp4) 또는 이미지. 한 개당 ${MAX_MB}MB 이하. 비워두면 빈 칸으로 보여요.</p>
+    <p class="note">인스타그램 릴스 링크를 붙여넣는 게 가장 빨라요. 파일은 세로 영상(mp4)·이미지, 한 개당 ${MAX_MB}MB 이하.</p>
 
     <p class="sec">이렇게 제작해 주세요</p>
     <div class="field"><label>필수사항</label><textarea class="input" name="make" placeholder="한 줄에 하나씩&#10;비우면 ‘별도 가이드로 전달 예정입니다.’">${esc((b.make || []).join('\n'))}</textarea></div>
@@ -408,7 +537,7 @@ async function openEditor(id){
   </form></div>`;
   renderSlots();
   const f = $('ed');
-  if (editing.isNew) f.name.addEventListener('input', () => { if (!f.id.dataset.touched) f.id.value = slug(f.name.value); });
+  if (editing.isNew) f.name.addEventListener('input', () => { if (!f.id.dataset.touched) f.id.value = f.name.value.trim() ? uniqueId(f.name.value) : ''; });
   f.id.addEventListener('input', () => { f.id.dataset.touched = '1'; });
   f.addEventListener('input', (e) => e.target.classList?.remove('bad'));
   f.addEventListener('submit', (e) => { e.preventDefault(); saveBrand(); });
@@ -424,26 +553,38 @@ function renderSlots(){
   $('reelSlots').innerHTML = editing.reels.map((r, i) => {
     const src = r.file ? r.url : (!r.removed && r.path ? r.path : '');
     const isVid = r.file ? r.file.type.startsWith('video') : /\.(mp4|mov|webm)$/i.test(src);
-    const media = src ? (isVid ? `<video src="${esc(src)}" muted loop autoplay playsinline></video>` : `<img src="${esc(src)}" alt="">`) : '';
+    const media = r.link ? `<span style="position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:800;background:linear-gradient(160deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5)">인스타그램 링크</span>`
+      : src ? (isVid ? `<video src="${esc(src)}" muted loop autoplay playsinline></video>` : `<img src="${esc(src)}" alt="">`) : '';
+    const filled = !!(r.link || src);
     return `<div class="slot">
-      <div class="pv ${src ? 'has' : ''}"><span class="badge">REF ${i + 1}</span>${media || '비어 있어요'}${r.file ? '<span class="new">새 파일</span>' : ''}</div>
+      <div class="pv ${filled ? 'has' : ''}"><span class="badge">REF ${i + 1}</span>${media || '비어 있어요'}${r.file ? '<span class="new">새 파일</span>' : ''}</div>
+      <input class="input ig-in" data-link="${i}" placeholder="인스타그램 릴스 링크" value="${esc(r.link)}" spellcheck="false" autocapitalize="off">
       <div class="actions">
-        <label class="btn">${src ? '바꾸기' : '파일 선택'}<input type="file" accept="video/mp4,video/quicktime,video/webm,image/*" data-slot="${i}" hidden></label>
-        ${src ? `<button type="button" class="btn danger" data-unslot="${i}">비우기</button>` : ''}
+        <label class="btn">${src && !r.link ? '파일 바꾸기' : '파일 선택'}<input type="file" accept="video/mp4,video/quicktime,video/webm,image/*" data-slot="${i}" hidden></label>
+        ${filled ? `<button type="button" class="btn danger" data-unslot="${i}">비우기</button>` : ''}
       </div></div>`;
   }).join('');
   $('reelSlots').querySelectorAll('input[type=file]').forEach((inp) => inp.addEventListener('change', () => {
     const file = inp.files[0]; if (!file) return;
-    if (file.size > MAX_MB * 1024 * 1024) return toast(`${MAX_MB}MB 이하 파일만 올릴 수 있어요 (지금 ${(file.size / 1048576).toFixed(1)}MB)`, true);
+    if (file.size > MAX_MB * 1024 * 1024) return toast(`${MAX_MB}MB 이하 파일만 올릴 수 있어요 (지금 ${(file.size / 1048576).toFixed(1)}MB). 인스타그램 링크를 붙여넣어 보세요.`, true);
     const r = editing.reels[+inp.dataset.slot];
     if (r.url) URL.revokeObjectURL(r.url);
-    r.file = file; r.url = URL.createObjectURL(file); r.removed = false;
+    r.file = file; r.url = URL.createObjectURL(file); r.removed = false; r.link = '';
+    renderSlots();
+  }));
+  $('reelSlots').querySelectorAll('[data-link]').forEach((inp) => inp.addEventListener('change', () => {
+    const r = editing.reels[+inp.dataset.link];
+    const v = inp.value.trim();
+    if (v && !/^https:\/\/(www\.)?instagram\.com\/(reel|reels|p|tv)\/[\w-]+/i.test(v)) { inp.classList.add('bad'); return toast('instagram.com/reel/… 형태의 링크를 붙여넣어주세요', true); }
+    if (r.url) URL.revokeObjectURL(r.url);
+    r.link = v.split('?')[0]; r.file = null; r.url = '';
+    if (v) r.removed = true;          // 올려둔 파일이 있었다면 링크로 대체
     renderSlots();
   }));
   $('reelSlots').querySelectorAll('[data-unslot]').forEach((btn) => btn.addEventListener('click', () => {
     const r = editing.reels[+btn.dataset.unslot];
     if (r.url) URL.revokeObjectURL(r.url);
-    r.file = null; r.url = ''; r.removed = true;
+    r.file = null; r.url = ''; r.removed = true; r.link = '';
     renderSlots();
   }));
 }
@@ -457,7 +598,8 @@ async function saveBrand(){
   const b = {
     id: v('id'), name: v('name'), summary: v('summary'),
     account: v('account'), hashtags: v('hashtags'), hashNote: v('hashNote'),
-    reward: v('reward') || '제품', quota: v('quota'), deadline: v('deadline'),
+    reward: v('reward') || '제품', quota: v('quota'), deadline: v('deadline'), announce: v('announce'),
+    status: f.querySelector('input[name=status]:checked')?.value || 'open',
     hot: f.hot.checked, color: f.color.value, category: '뷰티',
     make: lines(f.make.value), upload: lines(f.upload.value),
     reels: ['', ''], tierHashes: [],
@@ -485,13 +627,16 @@ async function saveBrand(){
         files.push({ path, b64: await fileToB64(r.file), label: `릴스 ${i + 1} 올리는 중… (${(r.file.size / 1048576).toFixed(1)}MB)` });
         b.reels[i] = path;
         if (r.path?.startsWith('reels/')) deletes.push(r.path);
+      } else if (r.link) {
+        b.reels[i] = r.link;
+        if (r.path?.startsWith('reels/')) deletes.push(r.path);
       } else if (r.removed) {
         if (r.path?.startsWith('reels/')) deletes.push(r.path);
       } else b.reels[i] = r.path || '';
     }
     const isNew = editing.isNew, origId = editing.origId, base = editing.base;
     await commitChange({
-      files, deletes,
+      files, deletes: (d) => unused(deletes, d),
       message: `admin: ${b.name} ${isNew ? '추가' : '수정'}`,
       mutate: (d) => {
         if (isNew) {
@@ -528,7 +673,7 @@ async function deleteBrand(id){
         gone = (cur.reels || []).filter((p) => p?.startsWith('reels/'));
         d.brands = d.brands.filter((x) => x.id !== id);
       },
-      deletes: () => gone,
+      deletes: (d) => unused(gone, d),
     });
     renderList(); toast('삭제했어요. 1분쯤 뒤 사이트에 반영돼요');
   } catch (e) { toast(errMsg(e), true); try { await loadData(); renderList(); } catch {} }
@@ -584,6 +729,10 @@ document.addEventListener('click', (e) => {
   const m = e.target.closest('[data-move]'); if (m) { const [i, d] = m.dataset.move.split(':').map(Number); return moveBrand(i, d); }
   const ed = e.target.closest('[data-edit]'); if (ed) return openEditor(ed.dataset.edit);
   const del = e.target.closest('[data-del]'); if (del) return deleteBrand(del.dataset.del);
+  const dup = e.target.closest('[data-dup]'); if (dup) return openEditor(dup.dataset.dup, true);
+  const lk = e.target.closest('[data-links]'); if (lk) return openLinks(lk.dataset.links);
+  const cp = e.target.closest('[data-copylink]');
+  if (cp) { navigator.clipboard?.writeText(cp.dataset.copylink).then(() => toast('링크를 복사했어요'), () => toast('복사하지 못했어요. 길게 눌러 복사해주세요', true)); return; }
 });
 $('addBtn').onclick = () => openEditor(null);
 $('savePast').onclick = savePast;
@@ -592,7 +741,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && editing)
 /* 다른 탭에서 돌아오면 최신 내용으로 (편집 중이 아닐 때만) */
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible' || editing || $('app').hidden) return;
-  try { await loadData(); renderList(); renderPast(); } catch {}
+  try { await loadData(); renderSheetCard(); renderList(); renderPast(); } catch {}
 });
 
 SiriaiVault.mountLock({
@@ -609,7 +758,8 @@ SiriaiVault.mountLock({
       if (e.status === 401) { token = ''; try { localStorage.removeItem(TOKEN_KEY); } catch {} renderGh(); toast('GitHub 연결이 만료됐어요. 다시 연결해주세요.', true); }
       try { DATA = await (await fetch('brands.json?t=' + Date.now(), { cache:'no-store' })).json(); } catch {}
     }
-    renderList(); renderPast();
+    DATA.brands ||= []; DATA.pastBrands ||= [];
+    renderSheetCard(); renderList(); renderPast();
   },
 });
 </script>

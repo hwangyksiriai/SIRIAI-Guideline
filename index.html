@@ -90,6 +90,18 @@ body[data-view="apply"] #apply{ animation:fadeIn .35s cubic-bezier(.16,1,.3,1); 
 .clip.empty .lbl{ font-size:10px; color:var(--muted); letter-spacing:.03em; }
 .clip-badge{ position:absolute; top:10px; left:10px; z-index:2; font-size:10.5px; font-weight:700; letter-spacing:.03em; color:#fff; background:rgba(23,19,16,.65); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); padding:4px 9px; border-radius:999px; }
 
+/* 인스타그램 링크 레퍼런스 */
+.clip.ig{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-decoration:none; color:#fff; border:none;
+  background:linear-gradient(160deg,#feda75 0%,#fa7e1e 25%,#d62976 50%,#962fbf 75%,#4f5bd5 100%); }
+.clip.ig .ig-mark{ position:absolute; top:10px; right:10px; }
+.clip.ig .ig-mark svg{ width:20px; height:20px; stroke:#fff; stroke-width:1.8; fill:none; }
+.clip.ig .ig-play{ width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.25); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:grid; place-items:center; }
+.clip.ig .ig-play svg{ width:22px; height:22px; fill:#fff; margin-left:3px; }
+.clip.ig .ig-lbl{ font-size:12px; font-weight:800; }
+.bchip.closed{ opacity:.55; }
+.saved-note{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:var(--muted); background:var(--card); border-radius:12px; padding:10px 12px; margin:0 0 14px; }
+.saved-note button{ background:none; border:none; color:var(--accent); font-weight:700; font-size:12px; cursor:pointer; padding:0; }
+
 .box{ border:1px solid var(--line); border-radius:16px; padding:18px 16px; }
 .facts{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .fact .k{ font-size:11.5px; color:var(--muted); margin-bottom:6px; }
@@ -220,7 +232,7 @@ textarea.input{ resize:vertical; min-height:84px; line-height:1.5; }
 <script>
 /* 이 파일은 인플루언서에게 그대로 공개돼요. 금액·내부 안내는 적지 마세요.
    운영 방법은 내부 허브 페이지에 있어요. */
-const SUBMIT_URL = '';
+let SUBMIT_URL = '';   // 구글 시트 접수 주소 — brands.json settings.submitUrl (어드민에서 설정)
 
 const PAGE =(new URLSearchParams(location.search).get('p') || '').trim().slice(0, 20);
 
@@ -237,16 +249,20 @@ async function loadData(){
   if (!res.ok) throw new Error('brands.json ' + res.status);
   const data = await res.json();
   PAST_BRANDS = data.pastBrands || [];
+  SUBMIT_URL = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(data.settings?.submitUrl || '') ? data.settings.submitUrl : '';
   const TBD = ['별도 가이드로 전달 예정입니다.'];
-  const all = (data.brands || []).filter((b) => b && b.id && b.name).map((b) => ({
+  const all = (data.brands || []).filter((b) => b && b.id && b.name && b.status !== 'hidden').map((b) => ({
     category: '뷰티', color: '#171310', hashNote: '광고 표기를 멘션 맨 앞에 배치',
     ...b,
-    deadline: b.deadline || '상시 모집',
+    closed: b.status === 'closed',
+    deadline: b.status === 'closed' ? '모집 마감' : (b.deadline || '상시 모집'),
     make: b.make?.filter(Boolean).length ? b.make.filter(Boolean) : TBD,
     upload: b.upload?.filter(Boolean).length ? b.upload.filter(Boolean) : TBD,
     reels: [0, 1].map((i) => (b.reels || [])[i] || ''),
-    facts: [['유형', '릴스'], ['제공', b.reward || '제품'], ['모집', b.quota || '상시']],
+    facts: [['유형', '릴스'], ['제공', b.reward || '제품'], ['모집', b.quota || '상시'], ...(b.announce ? [['선정 발표', b.announce]] : [])],
   }));
+  /* 모집 중인 캠페인을 앞으로, 마감된 캠페인은 뒤로 */
+  all.sort((a, b) => a.closed - b.closed);
   /* 고료 링크별 노출: 코드 대신 해시로 비교해서 공개 파일에 코드가 드러나지 않게 */
   const pageHash = PAGE ? await sha256hex('siriai-tier:' + PAGE) : '';
   BRANDS = all.filter((b) => !b.tierHashes?.length || b.tierHashes.includes(pageHash));
@@ -299,12 +315,10 @@ function renderGuide(){
       <div class="marquee"><div class="track">${items}</div><div class="shine" aria-hidden="true"><div class="track">${items}</div></div></div>
     </div>
     ${BRANDS.length > 1 ? `<div class="g-chips">${BRANDS.map((x) =>
-      `<button class="bchip${x.id === b.id ? ' active' : ''}" data-brand="${x.id}">${esc(x.name)}</button>`).join('')}</div>` : ''}
+      `<button class="bchip${x.id === b.id ? ' active' : ''}${x.closed ? ' closed' : ''}" data-brand="${x.id}">${esc(x.name)}${x.closed ? ' · 마감' : ''}</button>`).join('')}</div>` : ''}
     <div class="guide-body" key="${b.id}">
-      <div class="reels">${b.reels.map((src, i) => src
-        ? `<div class="clip"><span class="clip-badge">REF ${i + 1}</span>${/\.(mp4|mov|webm)$/i.test(src) ? `<video src="${esc(src)}" autoplay muted loop playsinline></video>` : `<img src="${esc(src)}" alt="">`}</div>`
-        : `<div class="clip empty"><span class="clip-badge">REF ${i + 1}</span><span class="plus">+</span><span class="lbl">레퍼런스 릴스</span></div>`).join('')}</div>
-      <div class="box facts">${b.facts.map(([k, v]) => `<div class="fact"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>
+      <div class="reels">${b.reels.map((src, i) => reelCard(src, i)).join('')}</div>
+      <div class="box facts" style="grid-template-columns:repeat(${b.facts.length > 3 ? 2 : 3},minmax(0,1fr))">${b.facts.map(([k, v]) => `<div class="fact"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>
 
       <div class="box">
         <h3 class="box-h">${svg('camera')}이렇게 제작해 주세요</h3>
@@ -327,8 +341,23 @@ function renderGuide(){
         </div>
       </div>
 
-      <button class="cta" data-go="apply" style="margin-top:6px">${esc(b.name)} 지원서 작성하기${svg('arrow')}</button>
+      ${b.closed
+        ? `<button class="cta" disabled style="margin-top:6px">모집이 마감되었어요</button>`
+        : `<button class="cta" data-go="apply" style="margin-top:6px">${esc(b.name)} 지원서 작성하기${svg('arrow')}</button>`}
     </div>`;
+}
+
+/* 레퍼런스: 업로드한 영상·이미지, 또는 인스타그램 링크 */
+function reelCard(src, i){
+  const badge = `<span class="clip-badge">REF ${i + 1}</span>`;
+  if (!src) return `<div class="clip empty">${badge}<span class="plus">+</span><span class="lbl">레퍼런스 릴스</span></div>`;
+  if (/^https?:\/\//i.test(src)) {
+    return `<a class="clip ig" href="${esc(src)}" target="_blank" rel="noopener noreferrer">${badge}
+      <span class="ig-mark"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></span>
+      <span class="ig-play"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5L8 5.5Z"/></svg></span>
+      <span class="ig-lbl">인스타그램에서 보기</span></a>`;
+  }
+  return `<div class="clip">${badge}${/\.(mp4|mov|webm)$/i.test(src) ? `<video src="${esc(src)}" autoplay muted loop playsinline></video>` : `<img src="${esc(src)}" alt="">`}</div>`;
 }
 
 /* ── 3. 지원서 ── */
@@ -337,7 +366,8 @@ function renderApply(){
     <button class="back" data-back><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>${esc(brand().name)} 가이드로</button>
     <p class="eyebrow">APPLY</p>
     <h2 class="f-title">캠페인 지원하기</h2>
-    <p class="f-desc">한 번만 입력하면 선정 즉시 제품 발송·촬영 안내까지 바로 진행돼요.</p>
+    <p class="f-desc">선정되시면 입력하신 연락처로 바로 안내드려요.</p>
+    ${savedInfo() ? `<div class="saved-note"><span>지난번에 입력한 정보를 채워뒀어요.</span><button type="button" id="forget">지우기</button></div>` : ''}
     <form id="form" novalidate>
       <div class="group">
         <h3 class="group-h"><span class="n">1</span>지원 브랜드<small>복수 선택 가능</small></h3>
@@ -362,32 +392,47 @@ function renderApply(){
         </div>
       </div>
       <div class="group">
-        <h3 class="group-h"><span class="n">4</span>배송 정보<small>선정 시 바로 발송</small></h3>
-        <div class="field"><label for="f-addr">받으실 주소<i>*</i></label>
-          <input class="input" id="f-addr" name="address" autocomplete="street-address" placeholder="도로명 주소, 상세 주소"></div>
+        <h3 class="group-h"><span class="n">4</span>배송 정보<small>선택</small></h3>
+        <div class="field"><label for="f-addr">받으실 주소</label>
+          <input class="input" id="f-addr" name="address" autocomplete="street-address" placeholder="도로명 주소, 상세 주소">
+          <small style="font-size:11.5px;color:var(--muted)">미리 적어주시면 선정 즉시 제품을 보내드려요. 비워두면 선정 후에 여쭤볼게요.</small></div>
       </div>
       <div class="field" style="margin-top:6px"><label for="f-msg">하고 싶은 말 (선택)</label>
         <textarea class="input" id="f-msg" name="message" placeholder="이 브랜드에 지원하는 이유, 기획하고 싶은 콘텐츠 등"></textarea></div>
       <label class="consent"><input type="checkbox" id="f-agree"><span>캠페인 진행을 위한 개인정보(이름, 연락처, SNS 계정, 이메일, 주소) 수집·이용에 동의합니다. 수집된 정보는 캠페인 종료 후 파기됩니다.</span></label>
+      <label class="consent" style="margin-top:-8px"><input type="checkbox" id="f-remember" checked><span>다음 지원 때 쓰도록 이 기기에 내 정보 기억하기</span></label>
       <p class="err" id="err"></p>
       <button class="cta" type="submit" id="submit">지원하기${svg('arrow')}</button>
     </form>`;
   renderBrandChips();
+  const saved = savedInfo();
+  if (saved) {
+    const f = $('form');
+    ['name', 'phone', 'email', 'instagram', 'followers', 'address'].forEach((k) => { if (saved[k]) f[k].value = saved[k]; });
+    $('forget').onclick = () => { try { localStorage.removeItem(INFO_KEY); } catch {} renderApply(); };
+  }
   $('form').addEventListener('submit', onSubmit);
   $('form').addEventListener('input', (e) => e.target.classList.remove('bad'));
 }
 
+/* 지원자 본인 기기에만 저장 — 다음 지원 때 자동으로 채움 */
+const INFO_KEY = 'siriai-applicant';
+function savedInfo(){ try { return JSON.parse(localStorage.getItem(INFO_KEY) || 'null'); } catch { return null; } }
+
 let picked = new Set([current]);
+const openBrands = () => BRANDS.filter((b) => !b.closed);
 function renderBrandChips(){
   const box = $('bchips'); if (!box) return;
-  box.innerHTML = BRANDS.map((b) => `<button type="button" class="bchip${picked.has(b.id) ? ' active' : ''}" data-pick="${b.id}">${esc(b.name)}</button>`).join('');
+  box.innerHTML = openBrands().map((b) => `<button type="button" class="bchip${picked.has(b.id) ? ' active' : ''}" data-pick="${b.id}">${esc(b.name)}</button>`).join('');
 }
 
 async function onSubmit(e){
   e.preventDefault();
   const f = e.target, err = $('err');
+  const chosen = openBrands().filter((b) => picked.has(b.id));
   const data = {
-    brands: BRANDS.filter((b) => picked.has(b.id)).map((b) => b.name),
+    brands: chosen.map((b) => b.name),
+    brandIds: chosen.map((b) => b.id),
     name: f.name.value.trim(), phone: f.phone.value.trim(),
     instagram: f.instagram.value.trim(), followers: f.followers.value.trim(),
     email: f.email.value.trim(), address: f.address.value.trim(), message: f.message.value.trim(),
@@ -399,7 +444,6 @@ async function onSubmit(e){
   if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(data.phone)) bad.push(f.phone);
   if (!data.instagram) bad.push(f.instagram);
   if (!data.followers) bad.push(f.followers);
-  if (!data.address) bad.push(f.address);
   if (data.email && !/^\S+@\S+\.\S+$/.test(data.email)) bad.push(f.email);
   bad.forEach((el) => el.classList.add('bad'));
   let msg = '';
@@ -409,26 +453,33 @@ async function onSubmit(e){
   err.textContent = msg; err.style.display = msg ? 'block' : 'none';
   if (msg) { (bad[0] || err).scrollIntoView({ block:'center', behavior:'smooth' }); return; }
 
+  /* 접수처가 없으면 절대 '완료'로 보이지 않게 */
+  if (!SUBMIT_URL) {
+    err.textContent = '지금은 온라인 접수를 준비 중이에요. 링크를 보내준 담당자에게 지원 의사를 알려주세요.'; err.style.display = 'block';
+    return;
+  }
+
   const btn = $('submit'); btn.disabled = true; btn.firstChild.textContent = '접수 중...';
   try {
-    if (SUBMIT_URL) {
-      // text/plain 으로 보내야 Apps Script 웹 앱이 CORS 사전요청 없이 받아요.
-      const res = await fetch(SUBMIT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(data) });
-      if (!res.ok) throw new Error('failed');
-      const out = await res.json().catch(() => ({ ok: true }));
-      if (out.ok === false) throw new Error(out.error || 'failed');
-    } else {
-      try { const all = JSON.parse(localStorage.getItem('siriai-applications') || '[]'); all.push(data); localStorage.setItem('siriai-applications', JSON.stringify(all)); } catch {}
-    }
+    // text/plain 으로 보내야 Apps Script 웹 앱이 CORS 사전요청 없이 받아요.
+    const res = await fetch(SUBMIT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error('failed');
+    const out = await res.json();               // 시트가 { ok:true } 를 돌려줘야만 성공
+    if (out.ok !== true) throw new Error(out.error || 'failed');
+    try {
+      if ($('f-remember').checked) localStorage.setItem(INFO_KEY, JSON.stringify({ name: data.name, phone: data.phone, email: data.email, instagram: data.instagram, followers: data.followers, address: data.address }));
+      else localStorage.removeItem(INFO_KEY);
+    } catch {}
+    const ann = chosen.filter((b) => b.announce).map((b) => `${b.name} ${b.announce}`);
     $('apply').innerHTML = `<div class="done-box">
       <div class="ok">${svg('check')}</div>
       <h3>지원이 완료되었어요</h3>
-      <p>${esc(data.brands.join(', '))} 캠페인 지원이 접수되었습니다.<br>선정 시 ${esc(data.phone)} 로 연락드릴게요.</p>
-      <button class="ghost" id="again">다른 브랜드도 보기</button></div>`;
-    $('again').onclick = () => { renderApply(); openSheet(); };
+      <p>${esc(data.brands.join(', '))} 캠페인 지원이 접수되었습니다.<br>선정되시면 ${esc(data.phone)} 로 연락드릴게요.${ann.length ? `<br><b style="color:var(--ink)">선정 발표</b> · ${esc(ann.join(' / '))}` : ''}</p>
+      ${openBrands().length > chosen.length ? `<button class="ghost" id="again">다른 캠페인도 보기</button>` : ''}</div>`;
+    $('again')?.addEventListener('click', () => { renderApply(); openSheet(); });
   } catch {
     btn.disabled = false; btn.firstChild.textContent = '지원하기';
-    err.textContent = '접수에 실패했어요. 잠시 후 다시 시도해주세요.'; err.style.display = 'block';
+    err.textContent = '접수에 실패했어요. 잠시 후 다시 시도해주세요. 계속 안 되면 링크를 보내준 담당자에게 알려주세요.'; err.style.display = 'block';
   }
 }
 
@@ -561,6 +612,14 @@ loadData().then(() => {
   }
   current = BRANDS[0].id;
   route();
+  /* 브랜드 링크(…#브랜드)로 들어오면 소개 화면을 건너뛰고 바로 그 가이드로 */
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (view === 'main' && BRANDS.some((b) => b.id === h)) {
+    history.scrollRestoration = 'manual';
+    const jump = () => { $('guide').scrollIntoView({ behavior:'instant' }); syncSection(); };
+    jump();
+    setTimeout(jump, 120);   // 글꼴·이미지가 늦게 자리를 잡아도 가이드 위치에 맞춤
+  }
 }).catch(() => {
   $('guide').innerHTML = `<h2 class="g-title">불러오지 못했어요</h2><p class="g-desc">잠시 후 새로고침 해주세요.</p>`;
   renderNav();
