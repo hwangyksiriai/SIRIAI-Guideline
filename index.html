@@ -526,7 +526,7 @@ async function onSubmit(e){
   };
   const bad = [];
   if (!data.name) bad.push(f.name);
-  if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(data.phone)) bad.push(f.phone);
+  if (!/^0\d{8,10}$/.test(data.phone.replace(/[\s.\-]/g, ''))) bad.push(f.phone);   // 띄어쓰기·점·하이픈 허용
   if (!data.instagram) bad.push(f.instagram);
   if (data.email && !/^\S+@\S+\.\S+$/.test(data.email)) bad.push(f.email);
   bad.forEach((el) => el.classList.add('bad'));
