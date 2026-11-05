@@ -64,8 +64,8 @@
     <ol class="how">
       <li><b>특정 브랜드로 바로 보내려면</b> 브랜드 관리에서 그 브랜드의 <b>링크 아이콘</b>을 눌러요. 열면 소개 화면 없이 그 브랜드 가이드가 바로 보여요.</li>
       <li><b>새 캠페인</b>은 비슷한 브랜드를 <b>복제</b>해서 바뀐 부분만 고치면 가장 빨라요. 끝난 캠페인은 삭제 대신 <b>마감</b>이나 <b>숨김</b>으로 바꿔요.</li>
-      <li><b>지원서</b>는 구글 시트 <b>'지원서'</b> 탭에 브랜드마다 한 줄씩 쌓여요. 같은 사람이 같은 브랜드에 또 지원하면 <b>'확인'</b> 칸에 표시돼요.</li>
-      <li><b>고료 금액</b>은 구글 시트 <b>'고료표'</b> 탭에만 적어요. 카드에 보이는 코드·금액을 그대로 넣으면 지원서에 고료가 자동으로 붙어요.</li>
+      <li><b>지원서</b>는 구글 시트 <b>'지원서'</b> 탭에 브랜드마다 한 줄씩 쌓이고, 어느 링크로 들어왔는지에 따라 <b>'고료'</b> 칸이 자동으로 채워져요.</li>
+      <li><b>고료 금액</b>은 Apps Script 코드 맨 위 <b>RATES</b>에만 적어요(깃허브 파일에는 적지 않음). 카드에 보이는 줄을 그대로 넣으면 돼요.</li>
       <li><b>고료 페이지 추가·변경</b>은 목록이 암호화돼 있어서 Claude에게 요청해주세요.</li>
     </ol>
   </section>
@@ -77,6 +77,7 @@
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 let TIERS = [];
+const feeLabel = (f) => Number(f) % 10000 === 0 ? Number(f) / 10000 + '만원' : Number(f).toLocaleString() + '원';
 
 function linkFor(code){
   const u = new URL('./', location.href);
@@ -91,7 +92,7 @@ async function render(){
     return `<div class="tier">
       <div class="tier-top"><b>${esc(t.label)}</b><span class="code">${esc(t.code)}</span><span class="brands" data-brands="${esc(t.code)}">브랜드 확인 중…</span></div>
       <span class="url">${esc(url)}</span>
-      ${t.fee ? `<p class="sheet-hint">시트 '고료표'에 → 페이지 코드 <b>${esc(t.code)}</b> · 고료 <b>${Number(t.fee).toLocaleString()}</b></p>` : ''}
+      ${t.fee ? `<p class="sheet-hint">Apps Script RATES → <b>'${esc(t.code)}': '${esc(feeLabel(t.fee))}',</b></p>` : ''}
       <div class="actions">
         <button class="btn" data-copy="${esc(url)}"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>링크 복사</button>
         <a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>새 탭에서 보기</a>
