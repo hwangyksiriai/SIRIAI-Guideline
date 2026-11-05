@@ -209,40 +209,67 @@ async function gh(path, opts = {}){
   }
   return res.status === 204 ? null : res.json();
 }
-const encPath = (p) => p.split('/').map(encodeURIComponent).join('/');
-async function getFileSha(path){
-  try { return (await gh(`/contents/${encPath(path)}?ref=${REPO.branch}`)).sha; }
-  catch (e) { if (e.status === 404) return null; throw e; }
+const CONFLICT = 'conflict';
+const conflict = () => Object.assign(new Error(CONFLICT), { status: CONFLICT });
+
+/* ── 데이터 읽기 ── */
+async function readBrandsAt(ref){
+  const f = await gh(`/contents/brands.json?ref=${ref}`);
+  const d = JSON.parse(b64ToUtf8(f.content));
+  d.pastBrands ||= []; d.brands ||= [];
+  return d;
 }
-async function putFile(path, b64, message, sha){
-  return gh(`/contents/${encPath(path)}`, { method:'PUT', body: JSON.stringify({ message, content: b64, branch: REPO.branch, ...(sha ? { sha } : {}) }) });
-}
-async function deleteFile(path, message){
-  const sha = await getFileSha(path);
-  if (!sha) return;
-  await gh(`/contents/${encPath(path)}`, { method:'DELETE', body: JSON.stringify({ message, sha, branch: REPO.branch }) });
+async function loadData(){
+  if (token) DATA = await readBrandsAt(REPO.branch);
+  else {
+    DATA = await (await fetch('brands.json?t=' + Date.now(), { cache:'no-store' })).json();
+    DATA.pastBrands ||= []; DATA.brands ||= [];
+  }
 }
 
-/* ── 데이터 읽기/쓰기 ── */
-async function loadData(){
-  if (token) {
-    const f = await gh(`/contents/brands.json?ref=${REPO.branch}`);
-    SHA = f.sha;
-    DATA = JSON.parse(b64ToUtf8(f.content));
-  } else {
-    DATA = await (await fetch('brands.json?t=' + Date.now(), { cache:'no-store' })).json();
+/* ── 저장: 파일 업로드 + brands.json 변경을 커밋 하나로 ──
+   여러 커밋이 몇 초 간격으로 들어가면 GitHub Pages 배포가 겹쳐 실패할 수 있어서
+   Git Data API(blob → tree → commit → ref)로 한 번에 올려요.
+   mutate(latest) 는 '지금 GitHub에 있는 최신본'에 변경을 적용해요. 그 사이 다른 곳에서
+   같은 브랜드가 바뀌었으면 mutate 가 conflict() 를 던져서 덮어쓰지 않아요. */
+async function commitChange({ mutate, files = [], deletes = [], message }){
+  const blobs = [];
+  for (const f of files) {
+    busy(f.label || '파일 올리는 중…');
+    const b = await gh('/git/blobs', { method:'POST', body: JSON.stringify({ content: f.b64, encoding:'base64' }) });
+    blobs.push({ path: f.path, sha: b.sha });
   }
-  DATA.pastBrands ||= []; DATA.brands ||= [];
+  busy('저장 중…');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const ref = await gh(`/git/ref/heads/${REPO.branch}`);
+    const head = ref.object.sha;
+    const commit = await gh(`/git/commits/${head}`);
+    const latest = await readBrandsAt(head);
+    mutate(latest);
+    const json = await gh('/git/blobs', { method:'POST', body: JSON.stringify({ content: utf8ToB64(JSON.stringify(latest, null, 2) + '\n'), encoding:'base64' }) });
+    const tree = [
+      ...blobs.map((b) => ({ path: b.path, mode:'100644', type:'blob', sha: b.sha })),
+      { path:'brands.json', mode:'100644', type:'blob', sha: json.sha },
+    ];
+    for (const p of (typeof deletes === 'function' ? deletes() : deletes)) {
+      try { await gh(`/contents/${p.split('/').map(encodeURIComponent).join('/')}?ref=${head}`); tree.push({ path: p, mode:'100644', type:'blob', sha: null }); }
+      catch (e) { if (e.status !== 404) throw e; }
+    }
+    const t = await gh('/git/trees', { method:'POST', body: JSON.stringify({ base_tree: commit.tree.sha, tree }) });
+    const c = await gh('/git/commits', { method:'POST', body: JSON.stringify({ message, tree: t.sha, parents: [head] }) });
+    try {
+      await gh(`/git/refs/heads/${REPO.branch}`, { method:'PATCH', body: JSON.stringify({ sha: c.sha, force: false }) });
+      DATA = latest;
+      return;
+    } catch (e) {
+      if (e.status !== 422) throw e;   // 그 사이 다른 커밋이 들어옴 → 최신본으로 다시
+    }
+  }
+  throw conflict();
 }
-/* 다른 사람이 그 사이 저장했을 수 있으니, 최신본을 받아서 변경만 적용한 뒤 저장 */
-async function commitData(mutate, message){
-  const f = await gh(`/contents/brands.json?ref=${REPO.branch}`);
-  const latest = JSON.parse(b64ToUtf8(f.content));
-  latest.pastBrands ||= []; latest.brands ||= [];
-  mutate(latest);
-  const r = await putFile('brands.json', utf8ToB64(JSON.stringify(latest, null, 2) + '\n'), message, f.sha);
-  SHA = r.content.sha; DATA = latest;
-}
+
+/* 편집 시작 시점의 브랜드와 지금 GitHub의 브랜드가 같은지 */
+const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /* ── GitHub 연결 카드 ── */
 function renderGh(){
@@ -322,11 +349,20 @@ let editing = null;      // { isNew, orig, reels:[{path, file, url, removed}] }
 
 function slug(s){ return String(s).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30); }
 
-function openEditor(id){
+async function openEditor(id){
+  /* 다른 탭·기기에서 바뀌었을 수 있으니 항상 최신본으로 열기 */
+  if (token) {
+    busy('최신 내용 불러오는 중…');
+    try { await loadData(); renderList(); renderPast(); }
+    catch (e) { idle(); return toast(errMsg(e), true); }
+    idle();
+  }
   const orig = id ? DATA.brands.find((b) => b.id === id) : null;
+  if (id && !orig) return toast('이미 삭제된 브랜드예요', true);
   const b = { ...blank(), ...(orig || {}) };
   b.reels = [0, 1].map((i) => (b.reels || [])[i] || '');
-  editing = { isNew: !orig, origId: orig?.id || '', reels: b.reels.map((p) => ({ path: p, file: null, url: '', removed: false })) };
+  editing = { isNew: !orig, origId: orig?.id || '', base: orig ? JSON.parse(JSON.stringify(orig)) : null,
+    reels: b.reels.map((p) => ({ path: p, file: null, url: '', removed: false })) };
   const tierChecks = TIERS.map((t) => `<label class="check"><input type="checkbox" name="tier" value="${esc(t.code)}" ${b.tierHashes?.includes(TIER_HASH[t.code]) ? 'checked' : ''}>${esc(t.label)}</label>`).join('');
   $('editorRoot').innerHTML = `<div class="overlay" id="ov"><form class="editor" id="ed" novalidate>
     <h2>${editing.isNew ? '새 브랜드' : esc(b.name) + ' 수정'}<button type="button" class="icon close" id="edClose" aria-label="닫기">${svg('x')}</button></h2>
@@ -439,33 +475,41 @@ async function saveBrand(){
 
   busy('저장 중…');
   try {
-    /* 1) 릴스 파일 */
-    const toDelete = [];
+    /* 릴스: 새 파일은 같은 커밋에 넣고, 바뀌거나 비운 옛 파일은 같은 커밋에서 지움 */
+    const files = [], deletes = [];
     for (let i = 0; i < 2; i++) {
       const r = editing.reels[i];
       if (r.file) {
-        busy(`릴스 ${i + 1} 올리는 중… (${(r.file.size / 1048576).toFixed(1)}MB)`);
         const ext = (r.file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
         const path = `reels/${b.id}-${i + 1}-${Date.now().toString(36)}.${ext}`;
-        await putFile(path, await fileToB64(r.file), `admin: ${b.name} 레퍼런스 ${i + 1} 업로드`);
+        files.push({ path, b64: await fileToB64(r.file), label: `릴스 ${i + 1} 올리는 중… (${(r.file.size / 1048576).toFixed(1)}MB)` });
         b.reels[i] = path;
-        if (r.path?.startsWith('reels/')) toDelete.push(r.path);
+        if (r.path?.startsWith('reels/')) deletes.push(r.path);
       } else if (r.removed) {
-        if (r.path?.startsWith('reels/')) toDelete.push(r.path);
+        if (r.path?.startsWith('reels/')) deletes.push(r.path);
       } else b.reels[i] = r.path || '';
     }
-    /* 2) brands.json */
-    busy('브랜드 정보 저장 중…');
-    const isNew = editing.isNew, origId = editing.origId;
-    await commitData((d) => {
-      const idx = d.brands.findIndex((x) => x.id === (isNew ? b.id : origId));
-      if (idx >= 0) d.brands[idx] = b; else d.brands.push(b);
-    }, `admin: ${b.name} ${isNew ? '추가' : '수정'}`);
-    /* 3) 바뀐 옛 릴스 정리 */
-    for (const p of toDelete) { try { await deleteFile(p, `admin: ${b.name} 이전 레퍼런스 정리`); } catch {} }
+    const isNew = editing.isNew, origId = editing.origId, base = editing.base;
+    await commitChange({
+      files, deletes,
+      message: `admin: ${b.name} ${isNew ? '추가' : '수정'}`,
+      mutate: (d) => {
+        if (isNew) {
+          if (d.brands.some((x) => x.id === b.id)) throw conflict();
+          d.brands.push(b);
+        } else {
+          const idx = d.brands.findIndex((x) => x.id === origId);
+          if (idx < 0 || !same(d.brands[idx], base)) throw conflict();   // 그 사이 다른 곳에서 바뀜
+          d.brands[idx] = b;
+        }
+      },
+    });
     closeEditor(); renderList();
     toast('저장했어요. 1분쯤 뒤 사이트에 반영돼요');
-  } catch (e) { toast(errMsg(e), true); }
+  } catch (e) {
+    toast(errMsg(e), true);
+    if (e.status === CONFLICT) { closeEditor(); try { await loadData(); renderList(); renderPast(); } catch {} }
+  }
   finally { idle(); }
 }
 
@@ -475,10 +519,19 @@ async function deleteBrand(id){
   if (!confirm(`${b.name} 브랜드를 삭제할까요?\n가이드 페이지와 브랜드 목록에서 사라져요.`)) return;
   busy('삭제 중…');
   try {
-    await commitData((d) => { d.brands = d.brands.filter((x) => x.id !== id); }, `admin: ${b.name} 삭제`);
-    for (const p of (b.reels || []).filter((p) => p?.startsWith('reels/'))) { try { await deleteFile(p, `admin: ${b.name} 레퍼런스 정리`); } catch {} }
+    let gone = [];
+    await commitChange({
+      message: `admin: ${b.name} 삭제`,
+      mutate: (d) => {
+        const cur = d.brands.find((x) => x.id === id);
+        if (!cur) return;
+        gone = (cur.reels || []).filter((p) => p?.startsWith('reels/'));
+        d.brands = d.brands.filter((x) => x.id !== id);
+      },
+      deletes: () => gone,
+    });
     renderList(); toast('삭제했어요. 1분쯤 뒤 사이트에 반영돼요');
-  } catch (e) { toast(errMsg(e), true); }
+  } catch (e) { toast(errMsg(e), true); try { await loadData(); renderList(); } catch {} }
   finally { idle(); }
 }
 
@@ -487,28 +540,39 @@ async function moveBrand(i, dir){
   const id = DATA.brands[i]?.id; if (!id) return;
   busy('순서 저장 중…');
   try {
-    await commitData((d) => {
-      const k = d.brands.findIndex((x) => x.id === id), j = k + dir;
-      if (k < 0 || j < 0 || j >= d.brands.length) return;
-      [d.brands[k], d.brands[j]] = [d.brands[j], d.brands[k]];
-    }, 'admin: 캠페인 순서 변경');
+    await commitChange({
+      message: 'admin: 캠페인 순서 변경',
+      mutate: (d) => {
+        const k = d.brands.findIndex((x) => x.id === id), j = k + dir;
+        if (k < 0 || j < 0 || j >= d.brands.length) return;
+        [d.brands[k], d.brands[j]] = [d.brands[j], d.brands[k]];
+      },
+    });
     renderList(); toast('순서를 바꿨어요');
-  } catch (e) { toast(errMsg(e), true); }
+  } catch (e) { toast(errMsg(e), true); try { await loadData(); renderList(); } catch {} }
   finally { idle(); }
 }
 
 async function savePast(){
   if (needToken()) return;
   const list = lines($('past').value);
+  const base = DATA.pastBrands.slice();
   busy('저장 중…');
   try {
-    await commitData((d) => { d.pastBrands = list; }, 'admin: 흐르는 글씨(진행 브랜드) 수정');
+    await commitChange({
+      message: 'admin: 흐르는 글씨(진행 브랜드) 수정',
+      mutate: (d) => { if (!same(d.pastBrands, base)) throw conflict(); d.pastBrands = list; },
+    });
     renderPast(); toast('저장했어요. 1분쯤 뒤 사이트에 반영돼요');
-  } catch (e) { toast(errMsg(e), true); }
+  } catch (e) {
+    toast(errMsg(e), true);
+    if (e.status === CONFLICT) { try { await loadData(); renderPast(); } catch {} }
+  }
   finally { idle(); }
 }
 
 function errMsg(e){
+  if (e.status === CONFLICT) return '다른 탭이나 기기에서 먼저 수정됐어요. 최신 내용을 불러왔으니 다시 수정해주세요.';
   if (e.status === 401) return '토큰이 만료됐거나 맞지 않아요. 연결을 해제하고 다시 연결해주세요.';
   if (e.status === 403) return '저장 권한이 없어요. 토큰의 Contents 권한을 확인해주세요.';
   if (e.status === 409 || e.status === 422) return '다른 곳에서 동시에 수정됐어요. 새로고침 후 다시 시도해주세요.';
@@ -525,6 +589,11 @@ $('addBtn').onclick = () => openEditor(null);
 $('savePast').onclick = savePast;
 $('logout').onclick = SiriaiVault.lock;
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && editing) closeEditor(); });
+/* 다른 탭에서 돌아오면 최신 내용으로 (편집 중이 아닐 때만) */
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || editing || $('app').hidden) return;
+  try { await loadData(); renderList(); renderPast(); } catch {}
+});
 
 SiriaiVault.mountLock({
   lockEl: $('lock'), form: $('lockForm'), errEl: $('lockErr'),
