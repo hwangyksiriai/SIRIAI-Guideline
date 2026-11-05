@@ -427,7 +427,7 @@ async function testSheet(url, notify){
   try {
     const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
       body: JSON.stringify({ test: true, brands: ['연결 테스트'], brandIds: ['test'], name: '어드민 테스트', phone: '010-0000-0000',
-        instagram: '@siriai_test', followers: '0', email: '', address: '', message: '어드민 연결 테스트', page: '', submittedAt: new Date().toISOString() }) });
+        instagram: '@siriai_test', email: '', address: '', message: '어드민 연결 테스트', page: '', submittedAt: new Date().toISOString() }) });
     const out = await res.json();
     if (out.ok !== true) throw new Error(out.error || 'not ok');
     if (notify) toast('시트에 테스트 줄이 들어갔어요 (상태: 테스트)');

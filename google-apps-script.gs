@@ -16,9 +16,10 @@ const NOTIFY_EMAIL = '';
 
 const SHEET_NAME = '지원서';
 const RATE_SHEET = '고료표';
-const HEADERS = ['접수일시', '브랜드', '이름', '연락처', '이메일', '인스타그램', '팔로워 수', '주소', '하고 싶은 말',
+const HEADERS = ['접수일시', '브랜드', '이름', '연락처', '이메일', '인스타그램', '주소', '하고 싶은 말',
                  '페이지 코드', '팔로워 구간', '고료', '확인', '상태', '브랜드 ID', '공동 작업자 동의', '2차 활용 동의'];
-const RATE_HEADERS = ['페이지 코드', '팔로워 구간', '최소 팔로워', '최대 팔로워', '고료', '메모'];
+const COL_STATUS = 13;  // '상태' 열 (M)
+const RATE_HEADERS = ['페이지 코드', '팔로워 구간', '고료', '메모'];
 /* 이 파일은 공개돼요. 코드·금액은 여기 적지 말고 시트 '고료표'에 직접 입력하세요. */
 const RATE_SEED = [];
 
@@ -42,11 +43,11 @@ function doPost(e) {
     const rows = names.map((name, i) => {
       const id = ids[i] || name;
       const dup = !isTest && seen.has(insta + '|' + id);
-      const checks = [checkTier_(rate, d.followers), dup ? '⚠ 중복 지원' : ''].filter(Boolean).join(' / ');
+      const checks = [rate ? '' : '⚠ 코드 확인', dup ? '⚠ 중복 지원' : ''].filter(Boolean).join(' / ');
       return [
         now, safe_(name), safe_(d.name), safe_(d.phone), safe_(d.email), safe_(insta ? '@' + insta : d.instagram),
-        safe_(d.followers), safe_(d.address), safe_(d.message),
-        safe_(code || '(코드 없음)'), safe_(rate ? rate[1] : ''), rate ? rate[4] : '',
+        safe_(d.address), safe_(d.message),
+        safe_(code || '(코드 없음)'), safe_(rate ? rate[1] : ''), rate ? rate[2] : '',
         checks || 'OK', isTest ? '테스트' : '신규', safe_(id),
         agree_(d.collabAgree), agree_(d.secondaryAgree),
       ];
@@ -56,7 +57,7 @@ function doPost(e) {
     if (NOTIFY_EMAIL && !isTest) {
       try {
         MailApp.sendEmail(NOTIFY_EMAIL, `[시리아이] 새 지원 · ${names.join(', ')} · ${d.name}`,
-          `브랜드: ${names.join(', ')}\n이름: ${d.name}\n인스타그램: @${insta}\n팔로워: ${d.followers}\n연락처: ${d.phone}\n\n시트: ${SpreadsheetApp.getActiveSpreadsheet().getUrl()}`);
+          `브랜드: ${names.join(', ')}\n이름: ${d.name}\n인스타그램: @${insta}\n연락처: ${d.phone}\n\n시트: ${SpreadsheetApp.getActiveSpreadsheet().getUrl()}`);
       } catch (err) {}
     }
     return json_({ ok: true });   // 고료 정보는 응답에 넣지 않음
@@ -83,7 +84,7 @@ function getSheet_() {
     sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#fde4e7');
     sheet.setFrozenRows(1);
     sheet.getRange('A:A').setNumberFormat('yyyy-mm-dd hh:mm');
-    sheet.getRange('N2:N').setDataValidation(SpreadsheetApp.newDataValidation()
+    sheet.getRange(2, COL_STATUS, sheet.getMaxRows() - 1, 1).setDataValidation(SpreadsheetApp.newDataValidation()
       .requireValueInList(['신규', '검토중', '선정', '탈락', '발송완료', '업로드완료', '테스트'], true).build());
   }
   return sheet;
@@ -114,7 +115,7 @@ function existingKeys_(sheet) {
   const set = new Set();
   if (last < 2) return set;
   const vals = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
-  vals.forEach((r) => { if (r[13] !== '테스트') set.add(normInsta_(r[5]) + '|' + String(r[14] || r[1])); });
+  vals.forEach((r) => { if (r[COL_STATUS - 1] !== '테스트') set.add(normInsta_(r[5]) + '|' + String(r[COL_STATUS] || r[1])); });
   return set;
 }
 
@@ -123,30 +124,6 @@ function agree_(v) { return v === true ? '동의' : v === false ? '미동의' : 
 
 function normInsta_(v) {
   return String(v || '').trim().replace(/^'/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').replace(/[/?#].*$/, '').toLowerCase();
-}
-
-/* 지원자가 적은 팔로워 수가 링크 구간 안에 있는지 (고료표에 최소/최대가 있을 때만) */
-function checkTier_(rate, followersText) {
-  if (!rate) return '⚠ 코드 확인';
-  if (rate[2] === '' && rate[3] === '') return '';
-  const n = parseFollowers_(followersText);
-  if (n == null) return '⚠ 팔로워 확인';
-  const min = Number(rate[2]) || 0;
-  const max = rate[3] === '' ? Infinity : Number(rate[3]);
-  return n >= min && n <= max ? '' : '⚠ 구간 불일치';
-}
-
-/* "12,000" "1.2만" "12k" "1만2천" 같은 표기를 숫자로 */
-function parseFollowers_(v) {
-  let s = String(v || '').replace(/[\s,명]/g, '').toLowerCase();
-  if (!s) return null;
-  let total = 0, m;
-  if ((m = s.match(/^([\d.]+)만/))) { total += parseFloat(m[1]) * 10000; s = s.slice(m[0].length); }
-  if ((m = s.match(/^([\d.]+)천/))) { total += parseFloat(m[1]) * 1000; s = s.slice(m[0].length); }
-  if ((m = s.match(/^([\d.]+)k$/))) { total += parseFloat(m[1]) * 1000; s = ''; }
-  if ((m = s.match(/^([\d.]+)m$/))) { total += parseFloat(m[1]) * 1000000; s = ''; }
-  if (s) { if (/^\d+(\.\d+)?$/.test(s)) total += parseFloat(s); else return null; }
-  return Math.round(total);
 }
 
 /* 앞자리 0(연락처)·@(계정)이 깨지거나, =로 시작하는 값이 수식으로 실행되지 않게 텍스트로 고정 */

@@ -147,6 +147,18 @@ body[data-view="apply"] #apply{ animation:fadeIn .35s cubic-bezier(.16,1,.3,1); 
 .input{ width:100%; padding:13px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-size:15px; color:var(--ink); outline:none; transition:border-color .15s, background .15s; }
 .input:focus{ border-color:var(--accent); background:#fff; }
 .input.bad{ border-color:var(--accent); }
+.input[readonly]{ cursor:pointer; }
+.addr-row{ display:flex; gap:8px; }
+.addr-row .input{ flex:1; min-width:0; }
+.addr-btn{ flex:0 0 auto; padding:0 16px; border-radius:12px; border:none; background:var(--ink); color:#fff; font-weight:700; font-size:14px; cursor:pointer; }
+.addr-layer{ position:fixed; inset:0; z-index:70; background:rgba(23,19,16,.45); display:flex; align-items:flex-end; justify-content:center; }
+.addr-layer[hidden]{ display:none; }
+.addr-sheet{ width:100%; max-width:560px; height:min(560px, 88svh); background:var(--bg); border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden; }
+.addr-top{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--line); }
+.addr-top b{ font-size:16px; }
+.addr-x{ border:none; background:var(--card); width:32px; height:32px; border-radius:50%; font-size:18px; cursor:pointer; color:var(--ink); }
+#addrFrame{ flex:1; min-height:0; }
+.addr-wait{ padding:40px 20px; text-align:center; color:var(--muted); font-size:14px; line-height:1.6; }
 textarea.input{ resize:vertical; min-height:84px; line-height:1.5; }
 .brand-chips{ display:flex; flex-wrap:wrap; gap:8px; }
 .bchip{ padding:9px 16px; border-radius:999px; border:1px solid var(--line); background:var(--card); font-weight:600; font-size:13px; color:var(--muted); cursor:pointer; transition:background .15s, color .15s, border-color .15s; }
@@ -231,6 +243,12 @@ textarea.input{ resize:vertical; min-height:84px; line-height:1.5; }
   <div class="sheet-list" id="sheetList"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="addr-layer" id="addrLayer" hidden onclick="if(event.target===this)closeAddrSearch()">
+  <div class="addr-sheet" role="dialog" aria-label="주소 검색">
+    <div class="addr-top"><b>주소 검색</b><button type="button" class="addr-x" onclick="closeAddrSearch()" aria-label="닫기">×</button></div>
+    <div id="addrFrame"></div>
+  </div>
+</div>
 
 <script>
 /* 이 파일은 인플루언서에게 그대로 공개돼요. 금액·내부 안내는 적지 마세요.
@@ -392,17 +410,18 @@ function renderApply(){
       </div>
       <div class="group">
         <h3 class="group-h"><span class="n">3</span>채널 정보</h3>
-        <div class="two">
-          <div class="field"><label for="f-insta">인스타그램 계정<i>*</i></label>
-            <input class="input" id="f-insta" name="instagram" placeholder="@account" autocapitalize="off"></div>
-          <div class="field"><label for="f-fol">팔로워 수<i>*</i></label>
-            <input class="input" id="f-fol" name="followers" inputmode="numeric" placeholder="예) 12,000"></div>
-        </div>
+        <div class="field"><label for="f-insta">인스타그램 계정<i>*</i></label>
+          <input class="input" id="f-insta" name="instagram" placeholder="@account" autocapitalize="off"></div>
       </div>
       <div class="group">
         <h3 class="group-h"><span class="n">4</span>배송 정보<small>선택</small></h3>
         <div class="field"><label for="f-addr">받으실 주소</label>
-          <input class="input" id="f-addr" name="address" autocomplete="street-address" placeholder="도로명 주소, 상세 주소">
+          <div class="addr-row">
+            <input class="input" id="f-zip" name="zip" placeholder="우편번호" readonly tabindex="-1">
+            <button type="button" class="addr-btn" id="addrBtn">주소 검색</button>
+          </div>
+          <input class="input" id="f-addr" name="addrBase" placeholder="주소 검색을 눌러 찾아주세요" readonly>
+          <input class="input" id="f-addr2" name="addrDetail" autocomplete="address-line2" placeholder="상세 주소 (동·호수)">
           <small style="font-size:11.5px;color:var(--muted)">미리 적어주시면 선정 즉시 제품을 보내드려요. 비워두면 선정 후에 여쭤볼게요.</small></div>
       </div>
       <div class="field" style="margin-top:6px"><label for="f-msg">하고 싶은 말 (선택)</label>
@@ -417,12 +436,52 @@ function renderApply(){
   const saved = savedInfo();
   if (saved) {
     const f = $('form');
-    ['name', 'phone', 'email', 'instagram', 'followers', 'address'].forEach((k) => { if (saved[k]) f[k].value = saved[k]; });
+    ['name', 'phone', 'email', 'instagram', 'zip', 'addrBase', 'addrDetail'].forEach((k) => { if (saved[k]) f[k].value = saved[k]; });
+    if (!saved.addrBase && saved.address) f.addrBase.value = saved.address;   // 예전 형식
     $('forget').onclick = () => { try { localStorage.removeItem(INFO_KEY); } catch {} renderApply(); };
   }
+  $('addrBtn').onclick = openAddrSearch;
+  $('f-addr').onclick = openAddrSearch;
   $('form').addEventListener('submit', onSubmit);
   $('form').addEventListener('input', (e) => e.target.classList.remove('bad'));
 }
+
+/* 주소 검색 (카카오 우편번호 서비스 — 키 없이 무료) : 화면 위에 검색창을 띄워요 */
+const POSTCODE_SRC = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+let postcodeLoading = null;
+function loadPostcode(){
+  if (window.daum?.Postcode) return Promise.resolve();
+  return postcodeLoading ||= new Promise((ok, fail) => {
+    const s = document.createElement('script');
+    s.src = POSTCODE_SRC; s.onload = ok;
+    s.onerror = () => { postcodeLoading = null; fail(); };
+    document.head.appendChild(s);
+  });
+}
+async function openAddrSearch(){
+  const layer = $('addrLayer'), box = $('addrFrame');
+  layer.hidden = false; document.body.style.overflow = 'hidden';
+  box.innerHTML = '<p class="addr-wait">주소 검색을 불러오는 중…</p>';
+  try { await loadPostcode(); }
+  catch { box.innerHTML = '<p class="addr-wait">주소 검색을 불러오지 못했어요.<br>닫고 상세 주소 칸에 전체 주소를 적어주세요.</p>'; return; }
+  box.innerHTML = '';
+  new daum.Postcode({
+    width: '100%', height: '100%',
+    oncomplete(d){
+      const extra = [d.bname && /[동로가]$/.test(d.bname) ? d.bname : '', d.buildingName && d.apartment === 'Y' ? d.buildingName : ''].filter(Boolean).join(', ');
+      const road = d.roadAddress || d.address;
+      $('f-zip').value = d.zonecode;
+      $('f-addr').value = road + (extra && d.roadAddress ? ` (${extra})` : '');
+      $('f-addr').classList.remove('bad');
+      closeAddrSearch();
+      setTimeout(() => $('f-addr2').focus(), 50);
+    },
+  }).embed(box, { autoClose: false });
+}
+function closeAddrSearch(){
+  $('addrLayer').hidden = true; $('addrFrame').innerHTML = ''; document.body.style.overflow = '';
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('addrLayer').hidden) closeAddrSearch(); });
 
 /* 지원자 본인 기기에만 저장 — 다음 지원 때 자동으로 채움 */
 const INFO_KEY = 'siriai-applicant';
@@ -456,8 +515,9 @@ async function onSubmit(e){
     brands: chosen.map((b) => b.name),
     brandIds: chosen.map((b) => b.id),
     name: f.name.value.trim(), phone: f.phone.value.trim(),
-    instagram: f.instagram.value.trim(), followers: f.followers.value.trim(),
-    email: f.email.value.trim(), address: f.address.value.trim(), message: f.message.value.trim(),
+    instagram: f.instagram.value.trim(),
+    email: f.email.value.trim(), message: f.message.value.trim(),
+    address: [f.zip.value.trim() && `(${f.zip.value.trim()})`, f.addrBase.value.trim(), f.addrDetail.value.trim()].filter(Boolean).join(' '),
     page: PAGE,
     collabAgree: termsFor(chosen).collab ? $('f-terms').checked : null,
     secondaryAgree: termsFor(chosen).secondary ? $('f-terms').checked : null,
@@ -467,7 +527,6 @@ async function onSubmit(e){
   if (!data.name) bad.push(f.name);
   if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(data.phone)) bad.push(f.phone);
   if (!data.instagram) bad.push(f.instagram);
-  if (!data.followers) bad.push(f.followers);
   if (data.email && !/^\S+@\S+\.\S+$/.test(data.email)) bad.push(f.email);
   bad.forEach((el) => el.classList.add('bad'));
   let msg = '';
@@ -492,7 +551,7 @@ async function onSubmit(e){
     const out = await res.json();               // 시트가 { ok:true } 를 돌려줘야만 성공
     if (out.ok !== true) throw new Error(out.error || 'failed');
     try {
-      if ($('f-remember').checked) localStorage.setItem(INFO_KEY, JSON.stringify({ name: data.name, phone: data.phone, email: data.email, instagram: data.instagram, followers: data.followers, address: data.address }));
+      if ($('f-remember').checked) localStorage.setItem(INFO_KEY, JSON.stringify({ name: data.name, phone: data.phone, email: data.email, instagram: data.instagram, zip: f.zip.value.trim(), addrBase: f.addrBase.value.trim(), addrDetail: f.addrDetail.value.trim() }));
       else localStorage.removeItem(INFO_KEY);
     } catch {}
     const ann = chosen.filter((b) => b.announce).map((b) => `${b.name} ${b.announce}`);
