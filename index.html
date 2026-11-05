@@ -54,7 +54,7 @@ section{ scroll-margin-top:76px; }
 .g-desc{ font-size:13.5px; line-height:1.6; color:var(--muted); margin:0; }
 .marquee{ position:relative; margin:0 -4px; padding:14px 0; overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent); mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent); }
-.track{ display:flex; align-items:center; gap:18px; width:max-content; animation:marquee 40s linear infinite; }
+.track{ display:flex; align-items:center; gap:18px; width:max-content; animation:marquee 140s linear infinite; }
 .m-item{ display:flex; align-items:center; gap:18px; white-space:nowrap; }
 .m-label{ font-weight:900; font-size:24px; letter-spacing:-.01em; color:rgba(23,19,16,.34); }
 .m-dot{ color:var(--line); font-size:10px; }
@@ -213,12 +213,20 @@ const SUBMIT_URL = '';
 
 const PAGE =(new URLSearchParams(location.search).get('p') || '').trim().slice(0, 20);
 
+/* 시리아이가 진행한 브랜드 — 포트폴리오(Beauty·Fashion)와 같은 목록. 모든 브랜드 페이지에 흘러가요. */
+const PAST_BRANDS = [
+  'ODDTYPE', 'INNISFREE', 'TOCOBO', 'Quadthera', 'forhz', 'OFFLOW', 'KEEPINTOUCH',
+  'Ohayoh', 'No the Love', 'COSRX', 'Musinsa standard beauty', 'wizzy', 'Finv',
+  'Lusom', 'Pretty Actually', 'Yadah', 'if:fu', 'Keybo', 'Skinsignal',
+  '8division', 'TOOMUCHTAX', 'innir', 'as if', 'Calie', 'Bluesunset', 'OJOS',
+  'Luaeb', 'The Cactus Hotel', 'Seven Eight Under', 'RATED GREEN', 'Lumiere Blanche', 'Velvaskin',
+];
+
 const ALL_BRANDS = [
   {
     id: 'hera', name: 'HERA', color: '#171310', deadline: '11.20 마감', hot: true,
     summary: '리플렉션 스킨글로우 파운데이션 — 맑은 상앗빛 피부 표현',
     reward: '제품', quota: '10명',
-    keywords: ['스킨글로우', '맑은 상앗빛', '광채 베이스', '얇은 밀착력', '헤라파데'],
     account: '@herabeauty_official',
     hashtags: '#광고 #헤라 #리플렉션스킨글로우파운데이션 #맑은상앗빛 #헤라파데',
   },
@@ -226,7 +234,6 @@ const ALL_BRANDS = [
     id: 'tocobo', name: 'TOCOBO', color: '#e8738a', deadline: '11.27 마감',
     summary: '비건 선케어 — 가볍고 촉촉한 데일리 선크림',
     reward: '제품', quota: '20명',
-    keywords: ['비건 선케어', '백탁 없는', '촉촉한 마무리', '데일리 선크림'],
     account: '@tocobo_official',
     hashtags: '#광고 #토코보 #비건선크림 #데일리선크림',
     make: ['제품 패키지가 2초 이상 정면으로 보이게', '손등 발림성 클로즈업 컷 포함', '자연광에서 촬영'],
@@ -244,7 +251,6 @@ const ALL_BRANDS = [
     category: '뷰티', deadline: '상시 모집', color: '#171310',
     reward: '제품', quota: '상시', hashNote: '광고 표기를 멘션 맨 앞에 배치',
     ...b,
-    keywords: b.keywords?.length ? b.keywords : [b.name, b.name, b.name],
     make: b.make?.length ? b.make : TBD,
     upload: b.upload?.length ? b.upload : TBD,
     reels: [0, 1].map((i) => (b.reels || [])[i] || ''),
@@ -289,7 +295,7 @@ function renderNav(){
 /* ── 2. 가이드 ── */
 function renderGuide(){
   const b = brand();
-  const items = [...b.keywords, ...b.keywords].map((w) => `<span class="m-item"><span class="m-label">${esc(w)}</span><span class="m-dot">•</span></span>`).join('');
+  const items = [...PAST_BRANDS, ...PAST_BRANDS].map((w) => `<span class="m-item"><span class="m-label">${esc(w)}</span><span class="m-dot">•</span></span>`).join('');
   $('guide').innerHTML = `
     <div class="guide-head">
       <p class="eyebrow">CONTENTS GUIDE · ${esc(b.deadline)}</p>
