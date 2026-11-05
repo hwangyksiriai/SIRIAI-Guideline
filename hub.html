@@ -7,44 +7,8 @@
 <meta name="referrer" content="no-referrer">
 <title>Siriai Hub</title>
 <link rel="icon" href="assets/symbol-black.png">
+<link rel="stylesheet" href="internal.css">
 <style>
-:root{
-  --bg:#ffffff; --ink:#171310; --muted:#6f6a5c; --accent:#fa233b;
-  --line:#e4ded2; --card:#f5f2ec; --accent-soft:rgba(250,35,59,.14); --shell-bg:#ebeae7;
-  --font:-apple-system,"SF Pro Text","Inter Tight","Noto Sans KR",Helvetica,Arial,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-}
-*{ box-sizing:border-box; }
-html,body{ margin:0; padding:0; }
-body{ background:var(--shell-bg); color:var(--ink); font-family:var(--font); word-break:keep-all; letter-spacing:-.01em; -webkit-font-smoothing:antialiased; }
-button,input{ font-family:inherit; }
-[hidden]{ display:none !important; }
-
-/* ── 잠금 화면 ── */
-.lock{ min-height:100svh; display:flex; align-items:center; justify-content:center; padding:16px; }
-.lock-card{ width:100%; max-width:360px; background:var(--bg); border-radius:20px; padding:40px 24px 32px; text-align:center; }
-.lock-card .sym{ width:56px; height:56px; display:block; margin:0 auto 18px; filter:drop-shadow(0 10px 20px rgba(0,0,0,.14)); }
-.lock-card h1{ font-size:20px; margin:0 0 6px; letter-spacing:-.02em; }
-.lock-card p{ font-size:13px; color:var(--muted); margin:0 0 24px; }
-.pin{ display:flex; justify-content:center; gap:10px; margin-bottom:14px; }
-.pin input{ width:52px; height:60px; text-align:center; font-size:24px; font-weight:800; border-radius:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); outline:none; transition:border-color .15s, background .15s; -webkit-text-security:disc; }
-.pin input:focus{ border-color:var(--accent); background:#fff; }
-.pin.shake{ animation:shake .4s; }
-.pin.shake input{ border-color:var(--accent); }
-@keyframes shake{ 20%,60%{ transform:translateX(-8px); } 40%,80%{ transform:translateX(8px); } }
-.lock-err{ font-size:12.5px; color:var(--accent); min-height:18px; margin:0; }
-
-/* ── 허브 ── */
-.shell{ max-width:640px; margin:0 auto; padding:8px; display:flex; flex-direction:column; gap:8px; }
-.topbar{ position:sticky; top:8px; z-index:10; display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--bg); border-radius:16px; }
-.topbar .mark{ width:24px; height:24px; }
-.topbar .word{ height:14px; }
-.topbar .tag{ font-size:11px; font-weight:800; color:var(--accent); background:var(--accent-soft); padding:4px 9px; border-radius:999px; letter-spacing:.04em; }
-.topbar .out{ margin-left:auto; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:12px; font-weight:700; color:var(--muted); cursor:pointer; }
-.card{ background:var(--bg); border-radius:16px; padding:24px 20px; }
-.eyebrow{ font-size:11px; font-weight:800; color:var(--accent); letter-spacing:.06em; margin:0 0 8px; }
-h2{ font-size:22px; letter-spacing:-.02em; margin:0 0 6px; }
-.desc{ font-size:13px; color:var(--muted); line-height:1.6; margin:0 0 18px; }
-
 .tier{ border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:10px; }
 .tier-top{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .tier-top b{ font-size:15px; }
@@ -53,28 +17,19 @@ h2{ font-size:22px; letter-spacing:-.02em; margin:0 0 6px; }
 .url{ display:block; width:100%; font-size:12.5px; color:var(--ink); background:var(--card); border-radius:10px; padding:10px 12px; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sheet-hint{ font-size:11.5px; color:var(--muted); margin:-4px 2px 10px; }
 .sheet-hint b{ color:var(--ink); }
-.actions{ display:flex; gap:8px; }
-.btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px; border-radius:999px; border:1px solid var(--line); background:#fff; font-size:13px; font-weight:700; color:var(--ink); cursor:pointer; text-decoration:none; }
-.btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
-.btn svg{ width:15px; height:15px; stroke:currentColor; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
-
 .how{ font-size:13px; line-height:1.7; color:var(--muted); margin:0; padding-left:18px; }
 .how li{ margin-bottom:6px; }
 .how b{ color:var(--ink); }
-pre{ background:var(--card); border-radius:12px; padding:14px; font-size:12px; line-height:1.6; overflow-x:auto; margin:12px 0 0; color:var(--ink); }
-.toast{ position:fixed; bottom:24px; left:50%; transform:translate(-50%,10px); background:var(--ink); color:#fff; font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; }
-.toast.show{ opacity:1; transform:translate(-50%,0); }
 </style>
 </head>
 <body>
 
-<!-- 잠금 화면 -->
 <main class="lock" id="lock">
   <form class="lock-card" id="lockForm" autocomplete="off">
     <img class="sym" src="assets/symbol-black.png" alt="">
     <h1>Siriai Hub</h1>
     <p>내부용 페이지예요. 비밀번호 4자리를 입력해주세요.</p>
-    <div class="pin" id="pin">
+    <div class="pin">
       <input inputmode="numeric" maxlength="1" aria-label="비밀번호 1번째">
       <input inputmode="numeric" maxlength="1" aria-label="비밀번호 2번째">
       <input inputmode="numeric" maxlength="1" aria-label="비밀번호 3번째">
@@ -84,13 +39,16 @@ pre{ background:var(--card); border-radius:12px; padding:14px; font-size:12px; l
   </form>
 </main>
 
-<!-- 허브 (잠금 해제 후) -->
 <div class="shell" id="hub" hidden>
   <header class="topbar">
     <img class="mark" src="assets/symbol-black.png" alt="">
     <img class="word" src="assets/logo-wordmark.png" alt="Siriai">
     <span class="tag">HUB</span>
-    <button class="out" id="logout">잠그기</button>
+    <div class="right">
+      <span class="pill on">링크</span>
+      <a class="pill" href="admin.html">브랜드 관리</a>
+      <button class="pill" id="logout">잠그기</button>
+    </div>
   </header>
 
   <section class="card">
@@ -104,152 +62,65 @@ pre{ background:var(--card); border-radius:12px; padding:14px; font-size:12px; l
     <p class="eyebrow">HOW TO</p>
     <h2>운영 방법</h2>
     <ol class="how">
-      <li><b>고료 금액</b>은 구글 시트 <b>'고료표'</b> 탭에만 적어요. 페이지 코드·구간·최소/최대 팔로워·고료를 맞춰두면, 지원서에 고료가 자동으로 붙어요.</li>
-      <li>지원자가 적은 팔로워 수가 링크의 구간과 다르면 시트 <b>'확인'</b> 칸에 표시돼요. 다른 구간 링크로 지원한 경우를 걸러낼 수 있어요.</li>
-      <li><b>고료 페이지 추가·변경</b>: 목록은 암호화돼 있어서 파일에서 직접 고칠 수 없어요. Claude에게 요청하고, 시트 '고료표'에도 같은 코드를 넣어주세요.</li>
-      <li><b>브랜드 추가</b>: 가이드라인 파일(index.html)의 ALL_BRANDS에 블록 하나를 추가하세요.</li>
+      <li><b>브랜드 추가·수정·삭제, 레퍼런스 릴스</b>는 위의 <b>브랜드 관리</b>에서 해요. 저장하면 1분쯤 뒤 사이트에 반영돼요.</li>
+      <li><b>고료 금액</b>은 구글 시트 <b>'고료표'</b> 탭에만 적어요. 카드에 보이는 코드·금액을 그대로 넣으면 지원서에 고료가 자동으로 붙어요.</li>
+      <li><b>고료 페이지 추가·변경</b>은 목록이 암호화돼 있어서 Claude에게 요청해주세요.</li>
     </ol>
-<pre>{
-  id: 'brand',            // 영문, 필수
-  name: 'BRAND',          // 필수
-  summary: '한 줄 소개',   // 필수
-  account: '@brand_official',
-  hashtags: '#광고 #브랜드',
-  // 선택 — 비우면 기본값
-  make: [], upload: [],   // → "별도 가이드로 전달 예정입니다."
-  reels: ['', ''],        // 레퍼런스 영상·이미지 경로
-  reward: '제품',          // ※ 금액 적지 않기 (공개됨)
-  quota: '10명', deadline: '11.30 마감',
-  tiers: ['코드', '코드'],  // 위 카드의 페이지 코드. 이 링크에서만 노출, 없으면 전체
-}</pre>
   </section>
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="vault.js"></script>
 <script>
-/* 고료별 페이지 목록은 비밀번호로 암호화돼 있어요 (AES-GCM, PBKDF2 60만 회).
-   비밀번호 없이는 파일을 열어봐도 코드·금액을 알 수 없어요.
-   목록을 바꾸려면 Claude 에게 요청하세요. (평문으로 여기 적지 마세요) */
-const VAULT = {
-  salt: 'U/E5sNYB01zfHlT4j0sqZA==',
-  iv: 'YRwW4O0b1QbIOGTw',
-  ct: 'Kg2mJKLhmu06TJI3ipQ6kUnWsKRMTK056xHx7C7qoiDS1DG1L5C9kAIGZbtbSC4IIq3jct4j3AhVMRNFHe5ZIF8Ov/E71pdSGCuRcsXE4+bUVLvVu66KZvjqMua6ymXxUmB1aC3nvLQ0Kz2zMSQ1UmRM8ZLxghWAHDnWs/mvKMwB/sYAJjtbV7Nwo39qjZryth3yWWy1KpLFn5bKNxT+4TQTHzMxzCwCgXd78Dox3KTxAjArEjpEt9CffK/BG8R3KX9RrQ==',
-  iterations: 600000,
-};
-let TIERS = [];
-const KEY = 'siriai-hub-pin';
 const $ = (id) => document.getElementById(id);
-const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+let TIERS = [];
 
-/* 맞는 비밀번호면 목록을, 틀리면 null 을 돌려줘요 */
-async function openVault(pin){
-  try {
-    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey({ name:'PBKDF2', salt: unb64(VAULT.salt), iterations: VAULT.iterations, hash:'SHA-256' },
-      base, { name:'AES-GCM', length:256 }, false, ['decrypt']);
-    const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv: unb64(VAULT.iv) }, key, unb64(VAULT.ct));
-    return JSON.parse(new TextDecoder().decode(pt)).tiers;
-  } catch { return null; }
-}
-
-/* ── 잠금 ── */
-const inputs = [...document.querySelectorAll('#pin input')];
-inputs.forEach((el, i) => {
-  el.addEventListener('input', () => {
-    el.value = el.value.replace(/\D/g, '').slice(-1);
-    if (el.value && i < 3) inputs[i + 1].focus();
-    if (inputs.every((x) => x.value)) check();
-  });
-  el.addEventListener('keydown', (e) => { if (e.key === 'Backspace' && !el.value && i > 0) inputs[i - 1].focus(); });
-  el.addEventListener('paste', (e) => {
-    const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
-    if (!d) return; e.preventDefault();
-    d.split('').forEach((c, j) => { inputs[j].value = c; });
-    if (d.length === 4) check(); else inputs[d.length].focus();
-  });
-});
-$('lockForm').addEventListener('submit', (e) => { e.preventDefault(); check(); });
-
-let fails = 0, waitUntil = 0, busy = false;
-async function check(){
-  if (busy || Date.now() < waitUntil) return;
-  busy = true; $('lockErr').textContent = '확인 중…';
-  const pin = inputs.map((x) => x.value).join('');
-  const tiers = await openVault(pin);
-  busy = false;
-  if (tiers) {
-    try { sessionStorage.setItem(KEY, pin); } catch {}
-    TIERS = tiers; unlock();
-  } else {
-    fails++;
-    const box = $('pin'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
-    inputs.forEach((x) => { x.value = ''; }); inputs[0].focus();
-    if (fails >= 5) { waitUntil = Date.now() + 30000; $('lockErr').textContent = '여러 번 틀렸어요. 30초 후 다시 시도해주세요.'; fails = 0; }
-    else $('lockErr').textContent = '비밀번호가 맞지 않아요.';
-  }
-}
-
-function unlock(){
-  $('lock').hidden = true; $('hub').hidden = false;
-  renderTiers();
-}
-$('logout').onclick = () => { try { sessionStorage.removeItem(KEY); } catch {} location.reload(); };
-
-/* ── 허브 ── */
 function linkFor(code){
   const u = new URL('./', location.href);
   u.search = '?p=' + encodeURIComponent(code);
   return u.href;
 }
-function renderTiers(){
+
+async function render(){
+  $('hub').hidden = false;
   $('tiers').innerHTML = TIERS.map((t) => {
     const url = linkFor(t.code);
     return `<div class="tier">
-      <div class="tier-top"><b>${t.label}</b><span class="code">${t.code}</span><span class="brands" data-brands="${t.code}">브랜드 확인 중…</span></div>
-      <span class="url">${url}</span>
-      ${t.fee ? `<p class="sheet-hint">시트 '고료표'에 → 페이지 코드 <b>${t.code}</b> · 고료 <b>${Number(t.fee).toLocaleString()}</b></p>` : ''}
+      <div class="tier-top"><b>${esc(t.label)}</b><span class="code">${esc(t.code)}</span><span class="brands" data-brands="${esc(t.code)}">브랜드 확인 중…</span></div>
+      <span class="url">${esc(url)}</span>
+      ${t.fee ? `<p class="sheet-hint">시트 '고료표'에 → 페이지 코드 <b>${esc(t.code)}</b> · 고료 <b>${Number(t.fee).toLocaleString()}</b></p>` : ''}
       <div class="actions">
-        <button class="btn" data-copy="${url}"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>링크 복사</button>
-        <a class="btn primary" href="${url}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>새 탭에서 보기</a>
+        <button class="btn" data-copy="${esc(url)}"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>링크 복사</button>
+        <a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>새 탭에서 보기</a>
       </div>
     </div>`;
   }).join('');
-  loadBrands();
+
+  /* 링크별로 실제 노출되는 브랜드 (brands.json 의 tierHashes 기준) */
+  try {
+    const data = await (await fetch('brands.json?t=' + Date.now(), { cache: 'no-store' })).json();
+    for (const t of TIERS) {
+      const h = await SiriaiVault.tierHash(t.code);
+      const names = (data.brands || []).filter((b) => !b.tierHashes?.length || b.tierHashes.includes(h)).map((b) => b.name);
+      document.querySelector(`[data-brands="${t.code}"]`).textContent = names.join(' · ') || '노출 브랜드 없음';
+    }
+  } catch { document.querySelectorAll('[data-brands]').forEach((el) => { el.textContent = ''; }); }
 }
 
-/* 각 링크를 보이지 않게 열어서, 그 링크에서 실제로 보이는 브랜드를 읽어와요.
-   (가이드라인 파일의 브랜드·tiers 를 바꾸면 허브에도 자동 반영) */
-async function loadBrands(){
-  for (const t of TIERS) {
-    const el = document.querySelector(`[data-brands="${t.code}"]`);
-    const names = await new Promise((resolve) => {
-      const f = document.createElement('iframe');
-      f.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0';
-      f.src = linkFor(t.code);
-      const done = (v) => { f.remove(); resolve(v); };
-      f.onload = () => {
-        try { done([...f.contentDocument.querySelectorAll('.nav-item[data-brand]')].map((b) => b.textContent.trim())); }
-        catch { done(null); }
-      };
-      setTimeout(() => done(null), 5000);
-      document.body.appendChild(f);
-    });
-    if (el) el.textContent = names ? names.join(' · ') : '';
-  }
-}
 document.addEventListener('click', async (e) => {
   const c = e.target.closest('[data-copy]'); if (!c) return;
   try { await navigator.clipboard.writeText(c.dataset.copy); } catch {}
   const t = $('toast'); t.textContent = '링크를 복사했어요'; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 1300);
 });
+$('logout').onclick = SiriaiVault.lock;
 
-(async () => {
-  let saved = null;
-  try { saved = sessionStorage.getItem(KEY); } catch {}
-  const tiers = saved ? await openVault(saved) : null;
-  if (tiers) { TIERS = tiers; unlock(); } else inputs[0].focus();
-})();
+SiriaiVault.mountLock({
+  lockEl: $('lock'), form: $('lockForm'), errEl: $('lockErr'),
+  inputs: [...document.querySelectorAll('.pin input')],
+  onOpen: (tiers) => { TIERS = tiers; render(); },
+});
 </script>
 </body>
 </html>

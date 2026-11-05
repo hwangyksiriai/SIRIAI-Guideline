@@ -224,52 +224,33 @@ const SUBMIT_URL = '';
 
 const PAGE =(new URLSearchParams(location.search).get('p') || '').trim().slice(0, 20);
 
-/* 시리아이가 진행한 브랜드 — 포트폴리오(Beauty·Fashion)와 같은 목록. 모든 브랜드 페이지에 흘러가요. */
-const PAST_BRANDS = [
-  'ODDTYPE', 'INNISFREE', 'TOCOBO', 'Quadthera', 'forhz', 'OFFLOW', 'KEEPINTOUCH',
-  'Ohayoh', 'No the Love', 'COSRX', 'Musinsa standard beauty', 'wizzy', 'Finv',
-  'Lusom', 'Pretty Actually', 'Yadah', 'if:fu', 'Keybo', 'Skinsignal',
-  '8division', 'TOOMUCHTAX', 'innir', 'as if', 'Calie', 'Bluesunset', 'OJOS',
-  'Luaeb', 'The Cactus Hotel', 'Seven Eight Under', 'RATED GREEN', 'Lumiere Blanche', 'Velvaskin',
-];
+/* 브랜드 내용은 brands.json 에 있어요 (어드민 페이지에서 수정). */
+let PAST_BRANDS = [];
+let BRANDS = [];
 
-const ALL_BRANDS = [
-  {
-    id: 'hera', name: 'HERA', color: '#171310', deadline: '11.20 마감', hot: true,
-    summary: '리플렉션 스킨글로우 파운데이션 — 맑은 상앗빛 피부 표현',
-    reward: '제품', quota: '10명',
-    account: '@herabeauty_official',
-    hashtags: '#광고 #헤라 #리플렉션스킨글로우파운데이션 #맑은상앗빛 #헤라파데',
-  },
-  {
-    id: 'tocobo', name: 'TOCOBO', color: '#e8738a', deadline: '11.27 마감',
-    summary: '비건 선케어 — 가볍고 촉촉한 데일리 선크림',
-    reward: '제품', quota: '20명',
-    account: '@tocobo_official',
-    hashtags: '#광고 #토코보 #비건선크림 #데일리선크림',
-    make: ['제품 패키지가 2초 이상 정면으로 보이게', '손등 발림성 클로즈업 컷 포함', '자연광에서 촬영'],
-    upload: ['업로드 후 최소 3개월 유지', '업로드 전 담당자 컨펌 필수'],
-  },
-  {
-    id: 'offlow', name: 'OFFLOW', color: '#7a6bd8',
-    summary: '컬러 립 틴트 — 맑은 발색의 데일리 립',
-    account: '@offlow_official',
-    hashtags: '#광고 #오프로우 #립틴트 #데일리립',
-  },
-].map((b) => {
+async function sha256hex(s){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+async function loadData(){
+  const res = await fetch('brands.json?t=' + Date.now(), { cache: 'no-store' });
+  if (!res.ok) throw new Error('brands.json ' + res.status);
+  const data = await res.json();
+  PAST_BRANDS = data.pastBrands || [];
   const TBD = ['별도 가이드로 전달 예정입니다.'];
-  return {
-    category: '뷰티', deadline: '상시 모집', color: '#171310',
-    reward: '제품', quota: '상시', hashNote: '광고 표기를 멘션 맨 앞에 배치',
+  const all = (data.brands || []).filter((b) => b && b.id && b.name).map((b) => ({
+    category: '뷰티', color: '#171310', hashNote: '광고 표기를 멘션 맨 앞에 배치',
     ...b,
-    make: b.make?.length ? b.make : TBD,
-    upload: b.upload?.length ? b.upload : TBD,
+    deadline: b.deadline || '상시 모집',
+    make: b.make?.filter(Boolean).length ? b.make.filter(Boolean) : TBD,
+    upload: b.upload?.filter(Boolean).length ? b.upload.filter(Boolean) : TBD,
     reels: [0, 1].map((i) => (b.reels || [])[i] || ''),
-    facts: [['유형', '릴스'],['제공', b.reward || '제품'], ['모집', b.quota || '상시']],
-  };
-});
-const BRANDS = ALL_BRANDS.filter((b) => !b.tiers?.length || b.tiers.includes(PAGE));
-if (!BRANDS.length) BRANDS.push(...ALL_BRANDS.filter((b) => !b.tiers?.length));
+    facts: [['유형', '릴스'], ['제공', b.reward || '제품'], ['모집', b.quota || '상시']],
+  }));
+  /* 고료 링크별 노출: 코드 대신 해시로 비교해서 공개 파일에 코드가 드러나지 않게 */
+  const pageHash = PAGE ? await sha256hex('siriai-tier:' + PAGE) : '';
+  BRANDS = all.filter((b) => !b.tierHashes?.length || b.tierHashes.includes(pageHash));
+}
 
 /* ── helpers ── */
 const $ = (id) => document.getElementById(id);
@@ -288,8 +269,8 @@ const I = {
 const svg = (k) => `<svg viewBox="0 0 24 24">${I[k]}</svg>`;
 const li = (t) => `<div class="li">${svg('check')}<span>${esc(t)}</span></div>`;
 
-let current = BRANDS[0].id;
-const brand = () => BRANDS.find((b) => b.id === current);
+let current = '';
+const brand = () => BRANDS.find((b) => b.id === current) || BRANDS[0];
 
 function toast(msg){
   const t = $('toast'); t.textContent = msg; t.classList.add('show');
@@ -571,7 +552,19 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet
 /* 화살표 안내 말풍선은 처음 조금 보여주고 숨김 */
 setTimeout(() => $('fabTip').classList.add('hide'), 4000);
 
-route();
+loadData().then(() => {
+  if (!BRANDS.length) {
+    $('guide').innerHTML = `<p class="eyebrow">CONTENTS GUIDE</p><h2 class="g-title">준비 중이에요</h2><p class="g-desc">지금 모집 중인 캠페인이 없어요. 곧 새로운 캠페인으로 찾아올게요.</p>`;
+    $('fab').hidden = true; $('fabTip').hidden = true;
+    renderNav();
+    return;
+  }
+  current = BRANDS[0].id;
+  route();
+}).catch(() => {
+  $('guide').innerHTML = `<h2 class="g-title">불러오지 못했어요</h2><p class="g-desc">잠시 후 새로고침 해주세요.</p>`;
+  renderNav();
+});
 </script>
 </body>
 </html>
