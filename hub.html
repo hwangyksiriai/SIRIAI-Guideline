@@ -51,6 +51,8 @@ h2{ font-size:22px; letter-spacing:-.02em; margin:0 0 6px; }
 .code{ font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; background:var(--card); color:var(--muted); letter-spacing:.04em; }
 .brands{ margin-left:auto; font-size:11.5px; color:var(--muted); text-align:right; }
 .url{ display:block; width:100%; font-size:12.5px; color:var(--ink); background:var(--card); border-radius:10px; padding:10px 12px; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sheet-hint{ font-size:11.5px; color:var(--muted); margin:-4px 2px 10px; }
+.sheet-hint b{ color:var(--ink); }
 .actions{ display:flex; gap:8px; }
 .btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px; border-radius:999px; border:1px solid var(--line); background:#fff; font-size:13px; font-weight:700; color:var(--ink); cursor:pointer; text-decoration:none; }
 .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -104,7 +106,7 @@ pre{ background:var(--card); border-radius:12px; padding:14px; font-size:12px; l
     <ol class="how">
       <li><b>고료 금액</b>은 구글 시트 <b>'고료표'</b> 탭에만 적어요. 페이지 코드·구간·최소/최대 팔로워·고료를 맞춰두면, 지원서에 고료가 자동으로 붙어요.</li>
       <li>지원자가 적은 팔로워 수가 링크의 구간과 다르면 시트 <b>'확인'</b> 칸에 표시돼요. 다른 구간 링크로 지원한 경우를 걸러낼 수 있어요.</li>
-      <li><b>구간 추가</b>: 아래 TIERS 목록과 시트 '고료표'에 같은 코드를 추가하세요. 코드는 금액·팔로워 수가 드러나지 않는 문자열로 정해요.</li>
+      <li><b>고료 페이지 추가·변경</b>: 목록은 암호화돼 있어서 파일에서 직접 고칠 수 없어요. Claude에게 요청하고, 시트 '고료표'에도 같은 코드를 넣어주세요.</li>
       <li><b>브랜드 추가</b>: 가이드라인 파일(index.html)의 ALL_BRANDS에 블록 하나를 추가하세요.</li>
     </ol>
 <pre>{
@@ -119,27 +121,36 @@ pre{ background:var(--card); border-radius:12px; padding:14px; font-size:12px; l
   reels: ['', ''],        // 레퍼런스 영상·이미지 경로
   reward: '제품',          // ※ 금액 적지 않기 (공개됨)
   quota: '10명', deadline: '11.30 마감',
-  tiers: ['a3f', 'k8d'],  // 이 링크에서만 노출. 없으면 전체
+  tiers: ['코드', '코드'],  // 위 카드의 페이지 코드. 이 링크에서만 노출, 없으면 전체
 }</pre>
   </section>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-/* 고료별 페이지 코드 — 코드는 뜻이 드러나지 않게 (인플루언서 링크에 보임) */
-const TIERS = [
-  { code: 'a3f', label: '고료 5만원' },
-  { code: 'k8d', label: '고료 10만원' },
-  { code: 'w5n', label: '고료 20만원' },
-];
-
-const PIN_HASH = '9a067887f0b0f5d91bc3ab1c59f4c9ad9a636740568658e8a7935e08d0b5e346';
-const KEY = 'siriai-hub-ok';
+/* 고료별 페이지 목록은 비밀번호로 암호화돼 있어요 (AES-GCM, PBKDF2 60만 회).
+   비밀번호 없이는 파일을 열어봐도 코드·금액을 알 수 없어요.
+   목록을 바꾸려면 Claude 에게 요청하세요. (평문으로 여기 적지 마세요) */
+const VAULT = {
+  salt: 'U/E5sNYB01zfHlT4j0sqZA==',
+  iv: 'YRwW4O0b1QbIOGTw',
+  ct: 'Kg2mJKLhmu06TJI3ipQ6kUnWsKRMTK056xHx7C7qoiDS1DG1L5C9kAIGZbtbSC4IIq3jct4j3AhVMRNFHe5ZIF8Ov/E71pdSGCuRcsXE4+bUVLvVu66KZvjqMua6ymXxUmB1aC3nvLQ0Kz2zMSQ1UmRM8ZLxghWAHDnWs/mvKMwB/sYAJjtbV7Nwo39qjZryth3yWWy1KpLFn5bKNxT+4TQTHzMxzCwCgXd78Dox3KTxAjArEjpEt9CffK/BG8R3KX9RrQ==',
+  iterations: 600000,
+};
+let TIERS = [];
+const KEY = 'siriai-hub-pin';
 const $ = (id) => document.getElementById(id);
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
-async function sha256(s){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+/* 맞는 비밀번호면 목록을, 틀리면 null 을 돌려줘요 */
+async function openVault(pin){
+  try {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name:'PBKDF2', salt: unb64(VAULT.salt), iterations: VAULT.iterations, hash:'SHA-256' },
+      base, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+    const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv: unb64(VAULT.iv) }, key, unb64(VAULT.ct));
+    return JSON.parse(new TextDecoder().decode(pt)).tiers;
+  } catch { return null; }
 }
 
 /* ── 잠금 ── */
@@ -160,13 +171,16 @@ inputs.forEach((el, i) => {
 });
 $('lockForm').addEventListener('submit', (e) => { e.preventDefault(); check(); });
 
-let fails = 0, waitUntil = 0;
+let fails = 0, waitUntil = 0, busy = false;
 async function check(){
-  if (Date.now() < waitUntil) return;
+  if (busy || Date.now() < waitUntil) return;
+  busy = true; $('lockErr').textContent = '확인 중…';
   const pin = inputs.map((x) => x.value).join('');
-  if (await sha256('siriai-hub:' + pin) === PIN_HASH) {
-    try { sessionStorage.setItem(KEY, PIN_HASH); } catch {}
-    unlock();
+  const tiers = await openVault(pin);
+  busy = false;
+  if (tiers) {
+    try { sessionStorage.setItem(KEY, pin); } catch {}
+    TIERS = tiers; unlock();
   } else {
     fails++;
     const box = $('pin'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
@@ -194,6 +208,7 @@ function renderTiers(){
     return `<div class="tier">
       <div class="tier-top"><b>${t.label}</b><span class="code">${t.code}</span><span class="brands" data-brands="${t.code}">브랜드 확인 중…</span></div>
       <span class="url">${url}</span>
+      ${t.fee ? `<p class="sheet-hint">시트 '고료표'에 → 페이지 코드 <b>${t.code}</b> · 고료 <b>${Number(t.fee).toLocaleString()}</b></p>` : ''}
       <div class="actions">
         <button class="btn" data-copy="${url}"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>링크 복사</button>
         <a class="btn primary" href="${url}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>새 탭에서 보기</a>
@@ -230,9 +245,12 @@ document.addEventListener('click', async (e) => {
   setTimeout(() => t.classList.remove('show'), 1300);
 });
 
-let ok = false;
-try { ok = sessionStorage.getItem(KEY) === PIN_HASH; } catch {}
-if (ok) unlock(); else inputs[0].focus();
+(async () => {
+  let saved = null;
+  try { saved = sessionStorage.getItem(KEY); } catch {}
+  const tiers = saved ? await openVault(saved) : null;
+  if (tiers) { TIERS = tiers; unlock(); } else inputs[0].focus();
+})();
 </script>
 </body>
 </html>

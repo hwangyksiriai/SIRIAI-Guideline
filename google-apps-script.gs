@@ -15,12 +15,9 @@ const RATE_SHEET = '고료표';
 const HEADERS = ['접수일시', '지원 브랜드', '이름', '연락처', '이메일', '인스타그램', '팔로워 수', '주소', '하고 싶은 말',
                  '페이지 코드', '팔로워 구간', '고료', '확인', '상태'];
 const RATE_HEADERS = ['페이지 코드', '팔로워 구간', '최소 팔로워', '최대 팔로워', '고료', '메모'];
-/* 처음 한 번만 채워지는 예시 — 코드·구간·금액은 시트에서 자유롭게 바꾸세요 (최대 비우면 상한 없음) */
-const RATE_SEED = [
-  ['a3f', '', '', '', 50000, ''],
-  ['k8d', '', '', '', 100000, ''],
-  ['w5n', '', '', '', 200000, ''],
-];
+/* 이 파일은 공개돼요. 코드·금액은 여기 적지 말고, 허브에 보이는 값을 시트 '고료표'에 직접 입력하세요.
+   (최소/최대 팔로워는 비워두면 확인을 건너뛰어요) */
+const RATE_SEED = [];
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -97,6 +94,7 @@ function checkTier_(rate, followersText) {
   if (!rate) return '⚠ 코드 확인';
   const n = parseFollowers_(followersText);
   if (n == null) return '⚠ 팔로워 확인';
+  if (rate[2] === '' && rate[3] === '') return '';
   const min = Number(rate[2]) || 0;
   const max = rate[3] === '' ? Infinity : Number(rate[3]);
   return n >= min && n <= max ? 'OK' : '⚠ 구간 불일치';
