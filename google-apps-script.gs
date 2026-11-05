@@ -17,7 +17,7 @@ const NOTIFY_EMAIL = '';
 const SHEET_NAME = '지원서';
 const RATE_SHEET = '고료표';
 const HEADERS = ['접수일시', '브랜드', '이름', '연락처', '이메일', '인스타그램', '팔로워 수', '주소', '하고 싶은 말',
-                 '페이지 코드', '팔로워 구간', '고료', '확인', '상태', '브랜드 ID'];
+                 '페이지 코드', '팔로워 구간', '고료', '확인', '상태', '브랜드 ID', '공동 작업자 동의', '2차 활용 동의'];
 const RATE_HEADERS = ['페이지 코드', '팔로워 구간', '최소 팔로워', '최대 팔로워', '고료', '메모'];
 /* 이 파일은 공개돼요. 코드·금액은 여기 적지 말고 시트 '고료표'에 직접 입력하세요. */
 const RATE_SEED = [];
@@ -48,6 +48,7 @@ function doPost(e) {
         safe_(d.followers), safe_(d.address), safe_(d.message),
         safe_(code || '(코드 없음)'), safe_(rate ? rate[1] : ''), rate ? rate[4] : '',
         checks || 'OK', isTest ? '테스트' : '신규', safe_(id),
+        agree_(d.collabAgree), agree_(d.secondaryAgree),
       ];
     });
     sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, HEADERS.length).setValues(rows);
@@ -116,6 +117,9 @@ function existingKeys_(sheet) {
   vals.forEach((r) => { if (r[13] !== '테스트') set.add(normInsta_(r[5]) + '|' + String(r[14] || r[1])); });
   return set;
 }
+
+/* true → '동의', false → '미동의', 해당 없음 → '-' */
+function agree_(v) { return v === true ? '동의' : v === false ? '미동의' : '-'; }
 
 function normInsta_(v) {
   return String(v || '').trim().replace(/^'/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').replace(/[/?#].*$/, '').toLowerCase();

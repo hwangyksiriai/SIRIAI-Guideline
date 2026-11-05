@@ -102,6 +102,12 @@ body[data-view="apply"] #apply{ animation:fadeIn .35s cubic-bezier(.16,1,.3,1); 
 .saved-note{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:var(--muted); background:var(--card); border-radius:12px; padding:10px 12px; margin:0 0 14px; }
 .saved-note button{ background:none; border:none; color:var(--accent); font-weight:700; font-size:12px; cursor:pointer; padding:0; }
 
+.must{ font-style:normal; font-size:10.5px; font-weight:800; color:var(--accent); background:var(--accent-soft); padding:2px 7px; border-radius:999px; margin-left:6px; }
+.box.notice{ border-color:rgba(250,35,59,.35); background:rgba(250,35,59,.04); }
+.box.notice p{ font-size:13.5px; line-height:1.65; color:var(--muted); margin:-4px 0 0; }
+.box.notice p b{ color:var(--ink); }
+.box.notice .period{ color:var(--ink); font-weight:700; }
+
 .box{ border:1px solid var(--line); border-radius:16px; padding:18px 16px; }
 .facts{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .fact .k{ font-size:11.5px; color:var(--muted); margin-bottom:6px; }
@@ -255,11 +261,13 @@ async function loadData(){
     category: '뷰티', color: '#171310', hashNote: '광고 표기를 멘션 맨 앞에 배치',
     ...b,
     closed: b.status === 'closed',
+    collab: b.collab !== false,              // 공동 작업자 초대 (기본 필수)
+    secondaryUse: b.secondaryUse !== false,  // 2차 활용 동의 (기본 필수)
     deadline: b.status === 'closed' ? '모집 마감' : (b.deadline || '상시 모집'),
     make: b.make?.filter(Boolean).length ? b.make.filter(Boolean) : TBD,
     upload: b.upload?.filter(Boolean).length ? b.upload.filter(Boolean) : TBD,
     reels: [0, 1].map((i) => (b.reels || [])[i] || ''),
-    facts: [['유형', '릴스'], ['제공', b.reward || '제품'], ['모집', b.quota || '상시'], ...(b.announce ? [['선정 발표', b.announce]] : [])],
+    facts: [['유형', '릴스'], ['제공', b.reward || '제품'], ...(b.announce ? [['선정 발표', b.announce]] : [])],
   }));
   /* 모집 중인 캠페인을 앞으로, 마감된 캠페인은 뒤로 */
   all.sort((a, b) => a.closed - b.closed);
@@ -281,6 +289,7 @@ const I = {
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   chev: '<path d="M9 6l6 6-6 6"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="M13.5 6.5l4 4"/>',
+  shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3Z"/><path d="M9 12l2 2 4-4"/>',
 };
 const svg = (k) => `<svg viewBox="0 0 24 24">${I[k]}</svg>`;
 const li = (t) => `<div class="li">${svg('check')}<span>${esc(t)}</span></div>`;
@@ -318,7 +327,7 @@ function renderGuide(){
       `<button class="bchip${x.id === b.id ? ' active' : ''}${x.closed ? ' closed' : ''}" data-brand="${x.id}">${esc(x.name)}${x.closed ? ' · 마감' : ''}</button>`).join('')}</div>` : ''}
     <div class="guide-body" key="${b.id}">
       <div class="reels">${b.reels.map((src, i) => reelCard(src, i)).join('')}</div>
-      <div class="box facts" style="grid-template-columns:repeat(${b.facts.length > 3 ? 2 : 3},minmax(0,1fr))">${b.facts.map(([k, v]) => `<div class="fact"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>
+      <div class="box facts" style="grid-template-columns:repeat(${b.facts.length},minmax(0,1fr))">${b.facts.map(([k, v]) => `<div class="fact"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>
 
       <div class="box">
         <h3 class="box-h">${svg('camera')}이렇게 제작해 주세요</h3>
@@ -332,7 +341,11 @@ function renderGuide(){
         <h3 class="box-h">${svg('upload')}이렇게 업로드해 주세요</h3>
         <div class="step"><span class="n">1</span>계정을 태그해 주세요</div>
         <div class="inner"><button class="copy" data-copy="${esc(b.account)}">${esc(b.account)}${svg('copy')}</button></div>
-        <div class="step" style="margin-top:16px"><span class="n">2</span>캡션은 이렇게 작성해 주세요</div>
+        ${b.collab ? `<div class="step" style="margin-top:16px"><span class="n">2</span>공동 작업자로 초대해 주세요<em class="must">필수</em></div>
+        <div class="inner">
+          <div class="li">${svg('check')}<span>게시 전 <b>사람 태그 → 공동 작업자 초대</b>에서 <b>${esc(b.account)}</b> 계정을 초대해 주세요.</span></div>
+        </div>` : ''}
+        <div class="step" style="margin-top:16px"><span class="n">${b.collab ? 3 : 2}</span>캡션은 이렇게 작성해 주세요</div>
         <div class="inner">
           <div class="inner-h"><span class="hash">#</span>필수 해시태그<button class="icon-copy" data-copy="${esc(b.hashtags)}" aria-label="해시태그 복사">${svg('copy')}</button></div>
           ${li(b.hashtags + (b.hashNote && !/^[-–—\s]*$/.test(b.hashNote) ? ` (${b.hashNote})` : ''))}
@@ -340,6 +353,11 @@ function renderGuide(){
           ${b.upload.map(li).join('')}
         </div>
       </div>
+
+      ${b.secondaryUse ? `<div class="box notice">
+        <h3 class="box-h">${svg('shield')}2차 활용에 동의해 주세요<em class="must">필수</em></h3>
+        <p>업로드한 콘텐츠는 브랜드가 <b>광고·SNS·상세페이지 등에 2차 활용</b>할 수 있어요${b.secondaryPeriod ? ` <span class="period">(${esc(b.secondaryPeriod)})</span>` : ''}. 지원서에서 동의해 주셔야 지원할 수 있어요.</p>
+      </div>` : ''}
 
       ${b.closed
         ? `<button class="cta" disabled style="margin-top:6px">모집이 마감되었어요</button>`
@@ -399,6 +417,7 @@ function renderApply(){
       </div>
       <div class="field" style="margin-top:6px"><label for="f-msg">하고 싶은 말 (선택)</label>
         <textarea class="input" id="f-msg" name="message" placeholder="이 브랜드에 지원하는 이유, 기획하고 싶은 콘텐츠 등"></textarea></div>
+      <label class="consent" id="termsRow" hidden><input type="checkbox" id="f-terms"><span id="termsText"></span></label>
       <label class="consent"><input type="checkbox" id="f-agree"><span>캠페인 진행을 위한 개인정보(이름, 연락처, SNS 계정, 이메일, 주소) 수집·이용에 동의합니다. 수집된 정보는 캠페인 종료 후 파기됩니다.</span></label>
       <label class="consent" style="margin-top:-8px"><input type="checkbox" id="f-remember" checked><span>다음 지원 때 쓰도록 이 기기에 내 정보 기억하기</span></label>
       <p class="err" id="err"></p>
@@ -424,6 +443,22 @@ const openBrands = () => BRANDS.filter((b) => !b.closed);
 function renderBrandChips(){
   const box = $('bchips'); if (!box) return;
   box.innerHTML = openBrands().map((b) => `<button type="button" class="bchip${picked.has(b.id) ? ' active' : ''}" data-pick="${b.id}">${esc(b.name)}</button>`).join('');
+  renderTerms();
+}
+
+/* 고른 브랜드의 필수 조건(공동 작업자·2차 활용) 동의 */
+function termsFor(list){
+  return { collab: list.some((b) => b.collab), secondary: list.some((b) => b.secondaryUse),
+    periods: [...new Set(list.filter((b) => b.secondaryUse && b.secondaryPeriod).map((b) => b.secondaryPeriod))] };
+}
+function renderTerms(){
+  const row = $('termsRow'); if (!row) return;
+  const t = termsFor(openBrands().filter((b) => picked.has(b.id)));
+  const parts = [];
+  if (t.collab) parts.push('브랜드 계정을 <b>공동 작업자로 초대</b>하는 것');
+  if (t.secondary) parts.push(`업로드한 콘텐츠를 브랜드가 <b>2차 활용</b>${t.periods.length ? `(${esc(t.periods.join(', '))})` : ''}하는 것`);
+  row.hidden = !parts.length;
+  $('termsText').innerHTML = `<b style="color:var(--accent)">[필수]</b> ${parts.join('과 ')}에 동의합니다.`;
 }
 
 async function onSubmit(e){
@@ -437,6 +472,8 @@ async function onSubmit(e){
     instagram: f.instagram.value.trim(), followers: f.followers.value.trim(),
     email: f.email.value.trim(), address: f.address.value.trim(), message: f.message.value.trim(),
     page: PAGE,
+    collabAgree: termsFor(chosen).collab ? $('f-terms').checked : null,
+    secondaryAgree: termsFor(chosen).secondary ? $('f-terms').checked : null,
     submittedAt: new Date().toISOString(),
   };
   const bad = [];
@@ -449,6 +486,7 @@ async function onSubmit(e){
   let msg = '';
   if (!data.brands.length) msg = '지원할 브랜드를 하나 이상 선택해주세요.';
   else if (bad.length) msg = '표시된 항목을 확인해주세요.';
+  else if (!$('termsRow').hidden && !$('f-terms').checked) msg = '공동 작업자 초대·2차 활용 조건에 동의해야 지원할 수 있어요.';
   else if (!$('f-agree').checked) msg = '개인정보 수집·이용에 동의해주세요.';
   err.textContent = msg; err.style.display = msg ? 'block' : 'none';
   if (msg) { (bad[0] || err).scrollIntoView({ block:'center', behavior:'smooth' }); return; }
