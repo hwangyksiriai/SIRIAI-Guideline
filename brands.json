@@ -104,5 +104,8 @@
       ],
       "tierHashes": []
     }
-  ]
+  ],
+  "settings": {
+    "submitUrl": "https://script.google.com/macros/s/AKfycbzSmm95y0OHXX6y2zHJFEqK7U6gF0vReDngTivuo3Kv6ziYCeD-NsJOKYLwoPd6Nczt/exec"
+  }
 }
