@@ -64,16 +64,19 @@
       "hashtags": "#광고 #오프로우 #립틴트 #데일리립",
       "hashNote": "광고 표기를 멘션 맨 앞에 배치",
       "reward": "제품",
-      "quota": "상시",
       "deadline": "상시 모집",
+      "announce": "",
+      "status": "open",
+      "collab": true,
+      "secondaryUse": true,
       "hot": false,
       "color": "#7a6bd8",
       "category": "뷰티",
       "make": [],
       "upload": [],
       "reels": [
-        "",
-        ""
+        "reels/offlow-1-mw6lhhzd.mp4",
+        "reels/offlow-2-mw6lhi02.mp4"
       ],
       "tierHashes": []
     }
