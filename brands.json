@@ -57,34 +57,6 @@
       "tierHashes": []
     },
     {
-      "id": "tocobo",
-      "name": "TOCOBO",
-      "summary": "비건 선케어 — 가볍고 촉촉한 데일리 선크림",
-      "account": "@tocobo_official",
-      "hashtags": "#광고 #토코보 #비건선크림 #데일리선크림",
-      "hashNote": "광고 표기를 멘션 맨 앞에 배치",
-      "reward": "제품",
-      "quota": "20명",
-      "deadline": "11.27 마감",
-      "hot": false,
-      "color": "#e8738a",
-      "category": "뷰티",
-      "make": [
-        "제품 패키지가 2초 이상 정면으로 보이게",
-        "손등 발림성 클로즈업 컷 포함",
-        "자연광에서 촬영"
-      ],
-      "upload": [
-        "업로드 후 최소 3개월 유지",
-        "업로드 전 담당자 컨펌 필수"
-      ],
-      "reels": [
-        "",
-        ""
-      ],
-      "tierHashes": []
-    },
-    {
       "id": "offlow",
       "name": "OFFLOW",
       "summary": "컬러 립 틴트 — 맑은 발색의 데일리 립",
