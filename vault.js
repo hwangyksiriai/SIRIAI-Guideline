@@ -143,8 +143,26 @@
     } catch {}
     return '';
   }
+  /* enc3: 링크 코드로 잠그는 고료 — 그 링크로 들어온 가이드만 풀 수 있어요 (index.html openFee 와 짝) */
+  async function codeKey(code, use) {
+    const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('siriai-fee-key:' + code));
+    return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, [use]);
+  }
+  async function sealForCode(code, text) {
+    if (!text) return '';
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await codeKey(code, 'encrypt'), new TextEncoder().encode(text)));
+    return 'enc3:' + b64(iv) + '.' + b64(ct);
+  }
+  async function openForCode(code, s) {
+    try {
+      const [iv, ct] = String(s).replace(/^enc3:/, '').split('.').map(unb64);
+      return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, await codeKey(code, 'decrypt'), ct));
+    } catch { return ''; }
+  }
+
   /* Apps Script 에 넣을 키 (어드민 '지원서 접수' 카드에서만 보여줌) */
   async function sheetKeyB64() { return b64((await sheetKey()).raw); }
 
-  window.SiriaiVault = { openVault, tierHash, mountLock, lock, seal, unseal, sheetKeyB64 };
+  window.SiriaiVault = { openVault, tierHash, mountLock, lock, seal, unseal, sheetKeyB64, sealForCode, openForCode };
 })();

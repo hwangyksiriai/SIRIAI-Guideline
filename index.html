@@ -289,6 +289,21 @@ async function loadData(){
   /* 고료 링크별 노출: 코드 대신 해시로 비교해서 공개 파일에 코드가 드러나지 않게 */
   const pageHash = PAGE ? await sha256hex('siriai-tier:' + PAGE) : '';
   BRANDS = all.filter((b) => !b.tierHashes?.length || b.tierHashes.includes(pageHash));
+  /* 캠페인 × 링크별 고료: 이 링크 코드로만 풀리는 값이라 다른 링크의 고료는 보이지 않아요 */
+  for (const b of BRANDS) {
+    const tf = pageHash && b.tierFees?.[pageHash];
+    b.sheetFee = tf?.s || '';
+    const fee = tf?.v ? await openFee(PAGE, tf.v) : '';
+    if (fee) b.facts.splice(2, 0, ['고료', fee]);
+  }
+}
+async function openFee(code, s){
+  try {
+    const [iv, ct] = s.replace(/^enc3:/, '').split('.').map((x) => Uint8Array.from(atob(x), (c) => c.charCodeAt(0)));
+    const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('siriai-fee-key:' + code));
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct));
+  } catch { return ''; }
 }
 
 /* ── helpers ── */
@@ -514,7 +529,7 @@ async function onSubmit(e){
   const data = {
     brands: chosen.map((b) => b.name),
     brandIds: chosen.map((b) => b.id),
-    fees: chosen.map((b) => b.feeEnc || ''),   // 암호문 그대로 — 시트(Apps Script)만 풀 수 있어요
+    fees: chosen.map((b) => b.sheetFee || ''),   // 이 링크의 캠페인 고료(잠긴 값) — 시트만 풀 수 있어서 바꿔치기 불가
     name: f.name.value.trim(), phone: f.phone.value.trim(),
     instagram: f.instagram.value.trim(),
     email: f.email.value.trim(), message: f.message.value.trim(),

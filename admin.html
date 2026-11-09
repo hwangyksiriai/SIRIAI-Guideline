@@ -64,6 +64,9 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
 .item.dim{ opacity:.6; }
 .order-bar{ position:sticky; bottom:12px; z-index:6; margin-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 14px; border-radius:14px; background:var(--ink); color:#fff; box-shadow:0 14px 30px -14px rgba(0,0,0,.5); }
 .order-bar[hidden]{ display:none; }
+.tier-rows{ display:flex; flex-direction:column; gap:8px; }
+.tier-row{ display:grid; grid-template-columns:minmax(150px, 40%) 1fr; gap:8px; align-items:center; }
+@media (max-width:520px){ .tier-row{ grid-template-columns:1fr; gap:6px; padding-bottom:6px; border-bottom:1px dashed var(--line); } }
 .order-bar span{ flex:1 1 180px; font-size:13px; font-weight:600; }
 .order-bar .btn:not(.primary){ background:transparent; color:#fff; border-color:rgba(255,255,255,.35); }
 .meta em.fee{ background:#171310; color:#fff; }
@@ -395,13 +398,16 @@ function renderList(){
     </div>`; }).join('') : `<div class="empty">진행 중인 캠페인이 없어요.<br>‘새 브랜드’로 추가해주세요.</div>`;
 }
 
-/* 캠페인별 고료: brands.json 에는 암호문(feeEnc)만 — PIN 연 어드민에서만 풀어서 보여줘요 */
+const feeLabel = (f) => Number(f) % 10000 === 0 ? Number(f) / 10000 + '만원' : Number(f).toLocaleString() + '원';
+/* 목록 카드에 링크별 고료 요약 (예: 고료 5만원 · 10만원 · 제품만) */
 async function fillFees(L){
+  await null;   // 목록이 그려진 뒤에 채우기
   for (const b of L) {
-    if (!b.feeEnc) continue;
-    const fee = await SiriaiVault.unseal(b.feeEnc);
+    if (!b.tierFees) continue;
+    const vals = [];
+    for (const t of TIERS) { const s = b.tierFees[TIER_HASH[t.code]]; if (s) vals.push(await SiriaiVault.openForCode(t.code, s.v)); }
     const el = document.querySelector(`[data-fee="${CSS.escape(b.id)}"]`);
-    if (el && fee) { el.textContent = '고료 ' + fee; el.hidden = false; }
+    if (el && vals.some(Boolean)) { el.textContent = '고료 ' + vals.filter(Boolean).join(' · '); el.hidden = false; }
   }
 }
 
@@ -523,10 +529,17 @@ async function openEditor(id, dup){
   const b = { ...blank(), ...(src || {}) };
   if (dup) Object.assign(b, { id: '', name: '', deadline: '', announce: '', uploadDate: '', status: 'open' });
   b.reels = [0, 1].map((i) => (b.reels || [])[i] || '');
-  const fee = await SiriaiVault.unseal(b.feeEnc);
+  /* 링크별 고료: 저장된 값이 있으면 그 값, 없으면 그 링크의 기본 고료(예: 5만원) */
+  const tierFee = {};
+  for (const t of TIERS) {
+    const saved = b.tierFees?.[TIER_HASH[t.code]];
+    tierFee[t.code] = saved ? await SiriaiVault.openForCode(t.code, saved.v) : feeLabel(t.fee);
+  }
   editing = { isNew: !orig, origId: orig?.id || '', base: orig ? JSON.parse(JSON.stringify(orig)) : null,
     reels: b.reels.map((p) => /^https?:\/\//i.test(p) ? { path: '', link: p, file: null, url: '', removed: false } : { path: p, link: '', file: null, url: '', removed: false }) };
-  const tierChecks = TIERS.map((t) => `<label class="check"><input type="checkbox" name="tier" value="${esc(t.code)}" ${b.tierHashes?.includes(TIER_HASH[t.code]) ? 'checked' : ''}>${esc(t.label)}</label>`).join('');
+  const tierChecks = TIERS.map((t) => `<div class="tier-row">
+      <label class="check"><input type="checkbox" name="tier" value="${esc(t.code)}" ${b.tierHashes?.includes(TIER_HASH[t.code]) ? 'checked' : ''}>${esc(t.label)} 링크</label>
+      <input class="input" name="fee-${esc(t.code)}" value="${esc(tierFee[t.code])}" placeholder="예) ${esc(feeLabel(t.fee))} · 제품만 제공"></div>`).join('');
   $('editorRoot').innerHTML = `<div class="overlay" id="ov"><form class="editor" id="ed" novalidate>
     <h2>${dup ? `${esc(src.name)} 복제해서 새 캠페인` : editing.isNew ? '새 브랜드' : esc(b.name) + ' 수정'}<button type="button" class="icon close" id="edClose" aria-label="닫기">${svg('x')}</button></h2>
     ${dup ? `<p class="desc">내용을 그대로 가져왔어요. 브랜드명과 바뀐 부분만 고쳐서 저장하세요.</p>` : ''}
@@ -548,8 +561,6 @@ async function openEditor(id, dup){
       <div class="field"><label>제공</label><input class="input" name="reward" value="${esc(b.reward)}" placeholder="제품"><small>금액은 적지 마세요 (공개돼요)</small></div>
       <div class="field"><label>마감</label><input class="input" name="deadline" value="${esc(b.deadline)}" placeholder="11.30 마감"><small>비우면 ‘상시 모집’</small></div>
     </div>
-    <div class="field"><label>고료 <span style="font-weight:600;color:var(--muted)">(내부용)</span></label><input class="input" name="fee" value="${esc(fee)}" placeholder="예) 10만원 · 팔로워 1만↑ 15만원">
-      <small>인플루언서 화면에는 안 보여요. 암호화해서 저장되고, 이 어드민 목록에만 표시돼요.</small></div>
     <div class="grid2">
       <div class="field"><label>선정 발표</label><input class="input" name="announce" value="${esc(b.announce || '')}" placeholder="예) 11.25 개별 연락"><small>적으면 가이드와 지원 완료 화면에 보여요</small></div>
       <div class="field"><label>업로드 일정</label><input class="input" name="uploadDate" value="${esc(b.uploadDate || '')}" placeholder="예) 12월 첫째 주"><small>대략적으로 적어도 돼요. 비우면 안 보여요</small></div>
@@ -579,9 +590,9 @@ async function openEditor(id, dup){
     </div>
     <p class="note">켜두면 가이드에 ‘필수’ 표시만 짧게 나가요. 자세한 내용은 실제 가이드라인으로 안내해주세요. 지원서에서 동의해야 지원할 수 있고, 동의 여부는 시트에 기록돼요.</p>
 
-    <p class="sec">노출할 고료 링크</p>
-    <div class="checks">${tierChecks}</div>
-    <p class="note">아무것도 선택하지 않으면 모든 링크에서 보여요.</p>
+    <p class="sec">링크별 노출 · 고료</p>
+    <div class="tier-rows">${tierChecks}</div>
+    <p class="note">체크한 링크에서만 이 캠페인이 보여요 (아무것도 체크하지 않으면 모든 링크). 오른쪽 고료는 <b>그 링크로 들어온 인플루언서에게만</b> ‘고료’로 보이고, 지원서 시트의 ‘캠페인 고료’ 칸에도 들어가요. 다른 링크의 고료는 보이지 않아요. 비우면 고료 줄이 안 보여요.</p>
 
     <div class="editor-foot">
       <button type="submit" class="btn primary" style="flex:1">저장</button>
@@ -669,7 +680,13 @@ async function saveBrand(){
 
   busy('저장 중…');
   try {
-    b.feeEnc = await SiriaiVault.seal(v('fee'));
+    /* 링크별 고료: v = 그 링크 코드로만 풀리는 값(가이드용), s = 시트만 풀 수 있는 값 */
+    b.tierFees = {};
+    for (const t of TIERS) {
+      const fee = f[`fee-${t.code}`].value.trim();
+      const shown = !codes.length || codes.includes(t.code);
+      if (fee && shown) b.tierFees[TIER_HASH[t.code]] = { v: await SiriaiVault.sealForCode(t.code, fee), s: await SiriaiVault.seal(fee) };
+    }
     /* 릴스: 새 파일은 같은 커밋에 넣고, 바뀌거나 비운 옛 파일은 같은 커밋에서 지움 */
     const files = [], deletes = [];
     for (let i = 0; i < 2; i++) {
