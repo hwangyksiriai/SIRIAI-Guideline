@@ -45,6 +45,7 @@
       "reward": "쿼드쎄라 틴즈 (20만원 상당)",
       "deadline": "11/11",
       "announce": "11/16",
+      "uploadDate": "11월 4주차",
       "status": "open",
       "collab": true,
       "secondaryUse": true,
@@ -57,55 +58,8 @@
         "reels/quadthera-1-mw9fbnjv.mp4",
         "reels/quadthera-2-mw9fbnkc.mp4"
       ],
-      "tierHashes": []
-    },
-    {
-      "id": "keepintouch",
-      "name": "Keepintouch",
-      "summary": "키핀터치 – 립부터 치크까지, 나만의 컬러로 완성하는 생기 있는 메이크업",
-      "account": "@keepintouch",
-      "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
-      "hashNote": "-",
-      "reward": "블러셔 or 립",
-      "deadline": "11.12 마감",
-      "announce": "11/16",
-      "status": "open",
-      "collab": true,
-      "secondaryUse": true,
-      "hot": true,
-      "color": "#fbd5eb",
-      "category": "뷰티",
-      "make": [],
-      "upload": [],
-      "reels": [
-        "reels/hera-1-mw3aawae.mp4",
-        "reels/hera-2-mw3aazeu.mp4"
-      ],
-      "tierHashes": []
-    },
-    {
-      "id": "offlow",
-      "name": "OFFLOW",
-      "summary": "컬러 립 틴트 — 맑은 발색의 데일리 립",
-      "account": "@offlow_official",
-      "hashtags": "#광고 #오프로우 #립틴트 #데일리립",
-      "hashNote": "광고 표기를 멘션 맨 앞에 배치",
-      "reward": "매트/글로우 립",
-      "deadline": "11/12",
-      "announce": "11/13",
-      "status": "open",
-      "collab": true,
-      "secondaryUse": true,
-      "hot": true,
-      "color": "#c7ffdf",
-      "category": "뷰티",
-      "make": [],
-      "upload": [],
-      "reels": [
-        "reels/offlow-1-mw6lhhzd.mp4",
-        "reels/offlow-2-mw6lhi02.mp4"
-      ],
-      "tierHashes": []
+      "tierHashes": [],
+      "feeEnc": ""
     },
     {
       "id": "quadthera-2",
@@ -131,6 +85,56 @@
       "reels": [
         "reels/quadthera-2-1-mw9fkihn.mp4",
         "reels/quadthera-2-2-mw9fkiii.mp4"
+      ],
+      "tierHashes": []
+    },
+    {
+      "id": "offlow",
+      "name": "OFFLOW",
+      "summary": "컬러 립 틴트 — 맑은 발색의 데일리 립",
+      "account": "@offlow_official",
+      "hashtags": "#광고 #오플로우",
+      "hashNote": "광고 표기를 멘션 맨 앞에 배치",
+      "reward": "매트/글로우 립",
+      "deadline": "11/12",
+      "announce": "11/13",
+      "uploadDate": "",
+      "status": "open",
+      "collab": true,
+      "secondaryUse": true,
+      "hot": true,
+      "color": "#c7ffdf",
+      "category": "뷰티",
+      "make": [],
+      "upload": [],
+      "reels": [
+        "reels/offlow-1-mw6lhhzd.mp4",
+        "reels/offlow-2-mw6lhi02.mp4"
+      ],
+      "tierHashes": [],
+      "feeEnc": ""
+    },
+    {
+      "id": "keepintouch",
+      "name": "Keepintouch",
+      "summary": "키핀터치 – 립부터 치크까지, 나만의 컬러로 완성하는 생기 있는 메이크업",
+      "account": "@keepintouch",
+      "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
+      "hashNote": "-",
+      "reward": "블러셔 or 립",
+      "deadline": "11.12 마감",
+      "announce": "11/16",
+      "status": "open",
+      "collab": true,
+      "secondaryUse": true,
+      "hot": true,
+      "color": "#fbd5eb",
+      "category": "뷰티",
+      "make": [],
+      "upload": [],
+      "reels": [
+        "reels/hera-1-mw3aawae.mp4",
+        "reels/hera-2-mw3aazeu.mp4"
       ],
       "tierHashes": []
     }
