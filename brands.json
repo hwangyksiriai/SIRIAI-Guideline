@@ -59,7 +59,20 @@
         "reels/quadthera-2-mw9fbnkc.mp4"
       ],
       "tierHashes": [],
-      "feeEnc": ""
+      "tierFees": {
+        "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
+          "v": "enc3:L8BqQm093yYkzHHh.VcfuziW3ClPhSG1+BDJzqXacFQSM4XuG15Y2smQ=",
+          "s": "enc2:+92kahJsz5rkZvasHwZaiA==.VRhw3EJS/GMtl8jbtQ==.STCtclozcgT/8elF+Xo8Pw=="
+        },
+        "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
+          "v": "enc3:zLaZOnDbo/PMbhsv.2uVTktUfEsfT2LQrBJQGUdVIr2cQtUE=",
+          "s": "enc2:mL0dsyLYO7O8rDFeeBAKFg==.nx+Hi5NhDw==.dU1AxSP87ho8NivTjCJkSA=="
+        },
+        "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
+          "v": "enc3:XYpaJhuoUtUVQdRH.nXU5IoXPR6JAsz/uqNXcjjc5peUesLxY",
+          "s": "enc2:L3ekbjg6fR6uPoWCxvwmAg==.ANoq+Dpysc8=.oO3sd1ABuLnA8IWi/eVNTg=="
+        }
+      }
     },
     {
       "id": "quadthera-2",
