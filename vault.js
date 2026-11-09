@@ -79,5 +79,33 @@
 
   function lock() { try { sessionStorage.removeItem(KEY); } catch {} location.reload(); }
 
-  window.SiriaiVault = { openVault, tierHash, mountLock, lock };
+  /* 캠페인별 고료처럼 공개 파일에 넣되 PIN 없이는 못 읽는 짧은 글 (형식: 'enc1:iv.ct') */
+  const b64 = (u8) => btoa(String.fromCharCode(...u8));
+  let fieldKeyP = null;
+  function fieldKey() {
+    if (!fieldKeyP) fieldKeyP = (async () => {
+      const pin = sessionStorage.getItem(KEY); if (!pin) throw new Error('locked');
+      const v = await getVault();
+      const salt = new Uint8Array([...unb64(v.salt), ...new TextEncoder().encode('siriai-field')]);
+      const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: v.iterations, hash: 'SHA-256' },
+        base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    })().catch((e) => { fieldKeyP = null; throw e; });
+    return fieldKeyP;
+  }
+  async function seal(text) {
+    if (!text) return '';
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await fieldKey(), new TextEncoder().encode(text)));
+    return 'enc1:' + b64(iv) + '.' + b64(ct);
+  }
+  async function unseal(s) {
+    if (!s || !String(s).startsWith('enc1:')) return '';
+    try {
+      const [iv, ct] = s.slice(5).split('.');
+      return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, await fieldKey(), unb64(ct)));
+    } catch { return ''; }
+  }
+
+  window.SiriaiVault = { openVault, tierHash, mountLock, lock, seal, unseal };
 })();

@@ -62,6 +62,11 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
 .meta em.closed{ background:#ebeae7; color:var(--muted); text-decoration:line-through; }
 .meta em.hidden{ background:var(--ink); color:#fff; }
 .item.dim{ opacity:.6; }
+.order-bar{ position:sticky; bottom:12px; z-index:6; margin-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 14px; border-radius:14px; background:var(--ink); color:#fff; box-shadow:0 14px 30px -14px rgba(0,0,0,.5); }
+.order-bar[hidden]{ display:none; }
+.order-bar span{ flex:1 1 180px; font-size:13px; font-weight:600; }
+.order-bar .btn:not(.primary){ background:transparent; color:#fff; border-color:rgba(255,255,255,.35); }
+.meta em.fee{ background:#171310; color:#fff; }
 .grip{ flex:0 0 auto; align-self:stretch; width:22px; margin:-12px -6px -12px -8px; display:grid; place-items:center; color:#b9b2a3; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
 .grip svg{ width:16px; height:16px; fill:currentColor; }
 .grip:hover{ color:var(--ink); }
@@ -142,8 +147,13 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
       <div><p class="eyebrow">CAMPAIGNS</p><h2>진행 중인 캠페인</h2></div>
       <button class="btn primary" id="addBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>새 브랜드</button>
     </div>
-    <p class="desc">순서대로 가이드에 보여요. 화살표로 순서를 바꿀 수 있어요.</p>
+    <p class="desc">순서대로 가이드에 보여요. 왼쪽 손잡이를 끌거나 화살표로 옮긴 뒤 <b>순서 저장</b>을 누르면 한 번에 반영돼요.</p>
     <div class="list" id="list"></div>
+    <div class="order-bar" id="orderBar" hidden>
+      <span>순서를 바꿨어요. 저장해야 가이드에 반영돼요.</span>
+      <button class="btn" id="orderUndo">되돌리기</button>
+      <button class="btn primary" id="orderSave">순서 저장</button>
+    </div>
   </section>
 
   <!-- 진행한 브랜드 -->
@@ -351,8 +361,21 @@ function tierLabels(b){
   return TIERS.filter((t) => b.tierHashes.includes(TIER_HASH[t.code])).map((t) => t.label);
 }
 const STATUS = { open: '모집중', closed: '마감', hidden: '숨김' };
+/* 아직 저장하지 않은 순서 (드래그·화살표). '순서 저장'을 눌러야 한 번에 올라가요 */
+let pendingOrder = null;
+function orderedBrands(){
+  if (!pendingOrder) return DATA.brands;
+  const rank = (b) => { const k = pendingOrder.indexOf(b.id); return k < 0 ? pendingOrder.length : k; };
+  return DATA.brands.slice().sort((a, b) => rank(a) - rank(b));
+}
+function setPendingOrder(ids){
+  pendingOrder = ids.join('|') === DATA.brands.map((b) => b.id).join('|') ? null : ids;
+  renderList();
+}
 function renderList(){
-  const L = DATA.brands;
+  const L = orderedBrands();
+  $('orderBar').hidden = !pendingOrder;
+  fillFees(L);
   $('list').innerHTML = L.length ? L.map((b, i) => {
     const st = b.status || 'open';
     return `
@@ -360,7 +383,7 @@ function renderList(){
       <span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="5.5" cy="3.5" r="1.4"/><circle cx="10.5" cy="3.5" r="1.4"/><circle cx="5.5" cy="8" r="1.4"/><circle cx="10.5" cy="8" r="1.4"/><circle cx="5.5" cy="12.5" r="1.4"/><circle cx="10.5" cy="12.5" r="1.4"/></svg></span>
       <span class="mono" style="background:${esc(b.color || '#171310')}">${esc((b.name || '?').slice(0, 2))}</span>
       <div class="txt"><b>${esc(b.name)}</b><span>${esc(b.summary)}</span>
-        <div class="meta">${st === 'open' ? `<em class="${b.hot ? 'hot' : ''}">${esc(b.deadline || '상시 모집')}</em>` : `<em class="${st}">${STATUS[st]}</em>`}<em>레퍼런스 ${(b.reels || []).filter(Boolean).length}/2</em>${tierLabels(b).map((l) => `<em>${esc(l)}</em>`).join('')}</div></div>
+        <div class="meta">${st === 'open' ? `<em class="${b.hot ? 'hot' : ''}">${esc(b.deadline || '상시 모집')}</em>` : `<em class="${st}">${STATUS[st]}</em>`}<em class="fee" data-fee="${esc(b.id)}" hidden></em><em>레퍼런스 ${(b.reels || []).filter(Boolean).length}/2</em>${tierLabels(b).map((l) => `<em>${esc(l)}</em>`).join('')}</div></div>
       <div class="ops">
         <button class="icon" data-links="${esc(b.id)}" aria-label="보낼 링크" title="보낼 링크">${svg('link')}</button>
         <button class="icon" data-dup="${esc(b.id)}" aria-label="복제해서 새 캠페인" title="복제해서 새 캠페인">${svg('dup')}</button>
@@ -370,6 +393,16 @@ function renderList(){
         <button class="icon danger" data-del="${esc(b.id)}" aria-label="삭제">${svg('trash')}</button>
       </div>
     </div>`; }).join('') : `<div class="empty">진행 중인 캠페인이 없어요.<br>‘새 브랜드’로 추가해주세요.</div>`;
+}
+
+/* 캠페인별 고료: brands.json 에는 암호문(feeEnc)만 — PIN 연 어드민에서만 풀어서 보여줘요 */
+async function fillFees(L){
+  for (const b of L) {
+    if (!b.feeEnc) continue;
+    const fee = await SiriaiVault.unseal(b.feeEnc);
+    const el = document.querySelector(`[data-fee="${CSS.escape(b.id)}"]`);
+    if (el && fee) { el.textContent = '고료 ' + fee; el.hidden = false; }
+  }
 }
 
 /* ── 브랜드별 보낼 링크 (고료 링크 + 그 브랜드로 바로) ── */
@@ -490,6 +523,7 @@ async function openEditor(id, dup){
   const b = { ...blank(), ...(src || {}) };
   if (dup) Object.assign(b, { id: '', name: '', deadline: '', announce: '', uploadDate: '', status: 'open' });
   b.reels = [0, 1].map((i) => (b.reels || [])[i] || '');
+  const fee = await SiriaiVault.unseal(b.feeEnc);
   editing = { isNew: !orig, origId: orig?.id || '', base: orig ? JSON.parse(JSON.stringify(orig)) : null,
     reels: b.reels.map((p) => /^https?:\/\//i.test(p) ? { path: '', link: p, file: null, url: '', removed: false } : { path: p, link: '', file: null, url: '', removed: false }) };
   const tierChecks = TIERS.map((t) => `<label class="check"><input type="checkbox" name="tier" value="${esc(t.code)}" ${b.tierHashes?.includes(TIER_HASH[t.code]) ? 'checked' : ''}>${esc(t.label)}</label>`).join('');
@@ -514,6 +548,8 @@ async function openEditor(id, dup){
       <div class="field"><label>제공</label><input class="input" name="reward" value="${esc(b.reward)}" placeholder="제품"><small>금액은 적지 마세요 (공개돼요)</small></div>
       <div class="field"><label>마감</label><input class="input" name="deadline" value="${esc(b.deadline)}" placeholder="11.30 마감"><small>비우면 ‘상시 모집’</small></div>
     </div>
+    <div class="field"><label>고료 <span style="font-weight:600;color:var(--muted)">(내부용)</span></label><input class="input" name="fee" value="${esc(fee)}" placeholder="예) 10만원 · 팔로워 1만↑ 15만원">
+      <small>인플루언서 화면에는 안 보여요. 암호화해서 저장되고, 이 어드민 목록에만 표시돼요.</small></div>
     <div class="grid2">
       <div class="field"><label>선정 발표</label><input class="input" name="announce" value="${esc(b.announce || '')}" placeholder="예) 11.25 개별 연락"><small>적으면 가이드와 지원 완료 화면에 보여요</small></div>
       <div class="field"><label>업로드 일정</label><input class="input" name="uploadDate" value="${esc(b.uploadDate || '')}" placeholder="예) 12월 첫째 주"><small>대략적으로 적어도 돼요. 비우면 안 보여요</small></div>
@@ -633,6 +669,7 @@ async function saveBrand(){
 
   busy('저장 중…');
   try {
+    b.feeEnc = await SiriaiVault.seal(v('fee'));
     /* 릴스: 새 파일은 같은 커밋에 넣고, 바뀌거나 비운 옛 파일은 같은 커밋에서 지움 */
     const files = [], deletes = [];
     for (let i = 0; i < 2; i++) {
@@ -720,13 +757,14 @@ function endDrag(){
   const { item, before } = drag; drag = null;
   item.style.transform = ''; item.classList.remove('dragging'); $('list').classList.remove('sorting');
   const order = listIds();
-  if (order.join('|') !== before) saveOrder(order);
+  if (order.join('|') !== before) setPendingOrder(order);   // 저장은 '순서 저장' 버튼으로 한 번에
 }
 $('list').addEventListener('pointerup', endDrag);
 $('list').addEventListener('pointercancel', endDrag);
 
-async function saveOrder(order){
-  if (needToken()) { renderList(); return; }
+async function saveOrder(){
+  if (!pendingOrder || needToken()) return;
+  const order = pendingOrder;
   busy('순서 저장 중…');
   try {
     await commitChange({
@@ -736,28 +774,20 @@ async function saveOrder(order){
         d.brands.sort((a, b) => rank(a) - rank(b));
       },
     });
-    renderList(); toast('순서를 바꿨어요');
-  } catch (e) { toast(errMsg(e), true); try { await loadData(); renderList(); } catch {} }
+    pendingOrder = null; renderList(); toast('순서를 저장했어요. 1분쯤 뒤 사이트에 반영돼요');
+  } catch (e) { toast(errMsg(e), true); }
   finally { idle(); }
 }
 
-async function moveBrand(i, dir){
-  if (needToken()) return;
-  const id = DATA.brands[i]?.id; if (!id) return;
-  busy('순서 저장 중…');
-  try {
-    await commitChange({
-      message: 'admin: 캠페인 순서 변경',
-      mutate: (d) => {
-        const k = d.brands.findIndex((x) => x.id === id), j = k + dir;
-        if (k < 0 || j < 0 || j >= d.brands.length) return;
-        [d.brands[k], d.brands[j]] = [d.brands[j], d.brands[k]];
-      },
-    });
-    renderList(); toast('순서를 바꿨어요');
-  } catch (e) { toast(errMsg(e), true); try { await loadData(); renderList(); } catch {} }
-  finally { idle(); }
+function moveBrand(i, dir){
+  const ids = orderedBrands().map((b) => b.id), j = i + dir;
+  if (j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  setPendingOrder(ids);
 }
+$('orderSave').onclick = saveOrder;
+$('orderUndo').onclick = () => { pendingOrder = null; renderList(); };
+addEventListener('beforeunload', (e) => { if (pendingOrder) { e.preventDefault(); e.returnValue = ''; } });
 
 async function savePast(){
   if (needToken()) return;

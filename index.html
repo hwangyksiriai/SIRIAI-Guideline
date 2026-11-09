@@ -555,13 +555,9 @@ async function onSubmit(e){
       if ($('f-remember').checked) localStorage.setItem(INFO_KEY, JSON.stringify({ name: data.name, phone: data.phone, email: data.email, instagram: data.instagram, zip: f.zip.value.trim(), addrBase: f.addrBase.value.trim(), addrDetail: f.addrDetail.value.trim() }));
       else localStorage.removeItem(INFO_KEY);
     } catch {}
-    const ann = chosen.filter((b) => b.announce).map((b) => `${b.name} ${b.announce}`);
     $('apply').innerHTML = `<div class="done-box">
       <div class="ok">${svg('check')}</div>
-      <h3>지원이 완료되었어요</h3>
-      <p>${esc(data.brands.join(', '))} 캠페인 지원이 접수되었습니다.<br>브랜드 선정 후 SIRIAI에서 개별 안내드릴게요.${ann.length ? `<br><b style="color:var(--ink)">선정 발표</b> · ${esc(ann.join(' / '))}` : ''}</p>
-      ${openBrands().length > chosen.length ? `<button class="ghost" id="again">다른 캠페인도 보기</button>` : ''}</div>`;
-    $('again')?.addEventListener('click', () => { renderApply(); openSheet(); });
+      <h3>지원이 완료되었어요</h3></div>`;
   } catch {
     btn.disabled = false; btn.firstChild.textContent = '지원하기';
     err.textContent = '접수에 실패했어요. 잠시 후 다시 시도해주세요. 계속 안 되면 링크를 보내준 담당자에게 알려주세요.'; err.style.display = 'block';
