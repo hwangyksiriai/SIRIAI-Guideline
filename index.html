@@ -514,6 +514,7 @@ async function onSubmit(e){
   const data = {
     brands: chosen.map((b) => b.name),
     brandIds: chosen.map((b) => b.id),
+    fees: chosen.map((b) => b.feeEnc || ''),   // 암호문 그대로 — 시트(Apps Script)만 풀 수 있어요
     name: f.name.value.trim(), phone: f.phone.value.trim(),
     instagram: f.instagram.value.trim(),
     email: f.email.value.trim(), message: f.message.value.trim(),

@@ -93,19 +93,58 @@
     })().catch((e) => { fieldKeyP = null; throw e; });
     return fieldKeyP;
   }
+  /* enc2: 구글 시트(Apps Script)도 풀 수 있는 방식 — HMAC-SHA256 키스트림 + 위변조 확인 태그.
+     키(32바이트)는 PIN에서 만들고, 같은 키를 Apps Script 코드(비공개)에 넣어둬요. */
+  let sheetKeyP = null;
+  function sheetKey() {
+    if (!sheetKeyP) sheetKeyP = (async () => {
+      const pin = sessionStorage.getItem(KEY); if (!pin) throw new Error('locked');
+      const v = await getVault();
+      const salt = new Uint8Array([...unb64(v.salt), ...new TextEncoder().encode('siriai-sheet')]);
+      const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+      const raw = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: v.iterations, hash: 'SHA-256' }, base, 256));
+      return { raw, key: await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']) };
+    })().catch((e) => { sheetKeyP = null; throw e; });
+    return sheetKeyP;
+  }
+  const cat = (...parts) => { const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0)); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; };
+  const txt = (s) => new TextEncoder().encode(s);
+  async function hmac(key, data) { return new Uint8Array(await crypto.subtle.sign('HMAC', key, data)); }
+  async function xorStream(key, nonce, data) {
+    const out = new Uint8Array(data.length);
+    for (let i = 0; i * 32 < data.length; i++) {
+      const ks = await hmac(key, cat(nonce, txt('ks'), new Uint8Array([i])));
+      for (let j = 0; j < 32 && i * 32 + j < data.length; j++) out[i * 32 + j] = data[i * 32 + j] ^ ks[j];
+    }
+    return out;
+  }
   async function seal(text) {
     if (!text) return '';
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await fieldKey(), new TextEncoder().encode(text)));
-    return 'enc1:' + b64(iv) + '.' + b64(ct);
+    const { key } = await sheetKey();
+    const nonce = crypto.getRandomValues(new Uint8Array(16));
+    const ct = await xorStream(key, nonce, txt(text).slice(0, 2000));
+    const tag = (await hmac(key, cat(txt('tag'), nonce, ct))).slice(0, 16);
+    return 'enc2:' + b64(nonce) + '.' + b64(ct) + '.' + b64(tag);
   }
   async function unseal(s) {
-    if (!s || !String(s).startsWith('enc1:')) return '';
+    s = String(s || '');
     try {
-      const [iv, ct] = s.slice(5).split('.');
-      return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, await fieldKey(), unb64(ct)));
-    } catch { return ''; }
+      if (s.startsWith('enc2:')) {
+        const { key } = await sheetKey();
+        const [nonce, ct, tag] = s.slice(5).split('.').map(unb64);
+        const want = (await hmac(key, cat(txt('tag'), nonce, ct))).slice(0, 16);
+        if (want.some((x, i) => x !== tag[i])) return '';
+        return new TextDecoder().decode(await xorStream(key, nonce, ct));
+      }
+      if (s.startsWith('enc1:')) {
+        const [iv, ct] = s.slice(5).split('.');
+        return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, await fieldKey(), unb64(ct)));
+      }
+    } catch {}
+    return '';
   }
+  /* Apps Script 에 넣을 키 (어드민 '지원서 접수' 카드에서만 보여줌) */
+  async function sheetKeyB64() { return b64((await sheetKey()).raw); }
 
-  window.SiriaiVault = { openVault, tierHash, mountLock, lock, seal, unseal };
+  window.SiriaiVault = { openVault, tierHash, mountLock, lock, seal, unseal, sheetKeyB64 };
 })();

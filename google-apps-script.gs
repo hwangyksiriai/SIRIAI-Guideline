@@ -19,8 +19,11 @@ const RATES = {
   // '코드': '5만원',
 };
 
+/* 어드민에서 캠페인마다 적은 고료를 푸는 키. 깃허브 파일에는 비워두고, Apps Script 에 붙여넣은 코드에만 채워요. */
+const SHEET_KEY = '';
+
 const SHEET_NAME = '지원서';
-const HEADERS = ['접수일시', '고료', '브랜드', '이름', '연락처', '이메일', '인스타그램', '우편번호', '주소', '하고 싶은 말',
+const HEADERS = ['접수일시', '고료', '캠페인 고료', '브랜드', '이름', '연락처', '이메일', '인스타그램', '우편번호', '주소', '하고 싶은 말',
                  '공동 작업자 동의', '2차 활용 동의'];
 const COL = (name) => HEADERS.indexOf(name) + 1;          // 열 번호 (1부터)
 const TEXT_COLS = ['연락처', '우편번호'];                  // 앞자리 0 이 지워지지 않게 '일반 텍스트' 서식
@@ -44,8 +47,9 @@ function doPost(e) {
     const name = (d.test === true ? TEST_MARK : '') + String(d.name || '');
     const now = new Date();
 
-    const rows = names.map((brand) => [
-      now, fee, safe_(brand), safe_(name), phone, safe_(d.email), instaUrl || safe_(d.instagram),
+    const fees = (d.fees || []).map(unsealFee_);
+    const rows = names.map((brand, i) => [
+      now, fee, safe_(fees[i] || ''), safe_(brand), safe_(name), phone, safe_(d.email), instaUrl || safe_(d.instagram),
       zip, safe_(d.address), safe_(d.message),
       agree_(d.collabAgree), agree_(d.secondaryAgree),
     ]);
@@ -60,7 +64,7 @@ function doPost(e) {
     if (NOTIFY_EMAIL && d.test !== true) {
       try {
         MailApp.sendEmail(NOTIFY_EMAIL, `[시리아이] 새 지원 · ${names.join(', ')} · ${d.name}`,
-          `브랜드: ${names.join(', ')}\n고료: ${fee}\n이름: ${d.name}\n인스타그램: ${instaUrl || d.instagram}\n연락처: ${phone}\n\n시트: ${SpreadsheetApp.getActiveSpreadsheet().getUrl()}`);
+          `브랜드: ${names.join(', ')}\n고료: ${fee}${fees.some(Boolean) ? ' / 캠페인 고료: ' + fees.join(', ') : ''}\n이름: ${d.name}\n인스타그램: ${instaUrl || d.instagram}\n연락처: ${phone}\n\n시트: ${SpreadsheetApp.getActiveSpreadsheet().getUrl()}`);
       } catch (err) {}
     }
     return json_({ ok: true });   // 고료 정보는 응답에 넣지 않음
@@ -82,6 +86,15 @@ function getSheet_() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (sheet && sheet.getLastRow() > 0) {
     const head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+    /* 새 칸만 추가된 경우: 기존 데이터는 그대로 두고 그 자리에 빈 칸을 끼워 넣어요 */
+    if (head.every((h) => HEADERS.includes(h))) {
+      HEADERS.forEach((h, i) => {
+        if (head[i] === h || head.includes(h)) return;
+        sheet.insertColumnBefore(i + 1);
+        sheet.getRange(1, i + 1).setValue(h).setFontWeight('bold').setBackground('#fde4e7');
+        head.splice(i, 0, h);
+      });
+    }
     if (head.join('|') === HEADERS.join('|')) return sheet;
     sheet.setName(SHEET_NAME + ' (이전 ' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'MMdd HHmm') + ')');   // 칸 구성이 바뀜 → 예전 탭 보관
     sheet = null;
@@ -93,6 +106,26 @@ function getSheet_() {
   sheet.getRange('A:A').setNumberFormat('yyyy-mm-dd hh:mm');
   TEXT_COLS.forEach((h) => sheet.getRange(2, COL(h), sheet.getMaxRows() - 1, 1).setNumberFormat('@'));
   return sheet;
+}
+
+/* 어드민이 잠가 둔 캠페인 고료(enc2:…) 풀기 — HMAC-SHA256 키스트림, 태그가 안 맞으면 '' */
+function unsealFee_(s) {
+  s = String(s || '');
+  if (!SHEET_KEY || s.indexOf('enc2:') !== 0) return '';
+  try {
+    const key = Utilities.base64Decode(SHEET_KEY);
+    const bytes = (t) => Utilities.newBlob(t).getBytes();
+    const hm = (data) => Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, data, key);
+    const [nonce, ct, tag] = s.slice(5).split('.').map((x) => Utilities.base64Decode(x));
+    const want = hm([].concat(bytes('tag'), nonce, ct)).slice(0, 16);
+    if (tag.length !== 16 || want.some((x, i) => x !== tag[i])) return '';
+    const out = [];
+    for (let i = 0; i * 32 < ct.length; i++) {
+      const ks = hm([].concat(nonce, bytes('ks'), [i]));
+      for (let j = 0; j < 32 && i * 32 + j < ct.length; j++) out.push(ct[i * 32 + j] ^ ks[j]);
+    }
+    return Utilities.newBlob(out).getDataAsString('UTF-8');
+  } catch (err) { return ''; }
 }
 
 /* true → '동의', false → '미동의', 해당 없음 → '-' */
