@@ -282,7 +282,7 @@ async function loadData(){
     make: b.make?.filter(Boolean).length ? b.make.filter(Boolean) : TBD,
     upload: b.upload?.filter(Boolean).length ? b.upload.filter(Boolean) : TBD,
     reels: [0, 1].map((i) => (b.reels || [])[i] || ''),
-    facts: [['유형', '릴스'], ['제공', b.reward || '제품'], ...(b.announce ? [['선정 발표', b.announce]] : [])],
+    facts: [['유형', '릴스'], ['제공', b.reward || '제품'], ...(b.announce ? [['선정 발표', b.announce]] : []), ...(b.uploadDate ? [['업로드', b.uploadDate]] : [])],
   }));
   /* 모집 중인 캠페인을 앞으로, 마감된 캠페인은 뒤로 */
   all.sort((a, b) => a.closed - b.closed);
@@ -342,7 +342,7 @@ function renderGuide(){
       `<button class="bchip${x.id === b.id ? ' active' : ''}${x.closed ? ' closed' : ''}" data-brand="${x.id}">${esc(x.name)}${x.closed ? ' · 마감' : ''}</button>`).join('')}</div>` : ''}
     <div class="guide-body" key="${b.id}">
       <div class="reels">${b.reels.map((src, i) => reelCard(src, i)).join('')}</div>
-      <div class="box facts" style="grid-template-columns:repeat(${b.facts.length},minmax(0,1fr))">${b.facts.map(([k, v]) => `<div class="fact"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}
+      <div class="box facts" style="grid-template-columns:repeat(${b.facts.length <= 3 ? b.facts.length : 2},minmax(0,1fr))">${b.facts.map(([k, v]) => `<div class="fact"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}
         ${b.secondaryUse || b.collab ? `<div class="musts">${b.secondaryUse ? '<em class="must">2차 활용 필수</em>' : ''}${b.collab ? '<em class="must">공동 작업자 필수</em>' : ''}</div>` : ''}</div>
 
       <div class="box">
