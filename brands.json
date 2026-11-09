@@ -45,7 +45,7 @@
       "reward": "쿼드쎄라 틴즈 (20만원 상당)",
       "deadline": "11/11",
       "announce": "11/16",
-      "uploadDate": "11월 4주차",
+      "uploadDate": "",
       "status": "open",
       "collab": true,
       "secondaryUse": true,
@@ -61,16 +61,16 @@
       "tierHashes": [],
       "tierFees": {
         "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
-          "v": "enc3:L8BqQm093yYkzHHh.VcfuziW3ClPhSG1+BDJzqXacFQSM4XuG15Y2smQ=",
-          "s": "enc2:+92kahJsz5rkZvasHwZaiA==.VRhw3EJS/GMtl8jbtQ==.STCtclozcgT/8elF+Xo8Pw=="
+          "v": "enc3:6nLo+10qpk+B0DuG.7swlCscxqWhBuPHBFOWofxKwjlGFkCrJd2A73Js=",
+          "s": "enc2:Ue8JmhL+C73c+3kLK7meUQ==.JfUGg6fyzhUU0HYDhw==.vYjAzJEtA0RP59Mga7Qy9A=="
         },
         "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
-          "v": "enc3:zLaZOnDbo/PMbhsv.2uVTktUfEsfT2LQrBJQGUdVIr2cQtUE=",
-          "s": "enc2:mL0dsyLYO7O8rDFeeBAKFg==.nx+Hi5NhDw==.dU1AxSP87ho8NivTjCJkSA=="
+          "v": "enc3:KKUyM93S4VeAwQAb.Qf7+yfnOtaz97uL9cAiEtiDbu2M65PU=",
+          "s": "enc2:GQPaIqezYDyfEoU4HjMZhw==.AHCXS0IUMA==.S+4yYSHbaVCLMCs5QjsSuA=="
         },
         "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
-          "v": "enc3:XYpaJhuoUtUVQdRH.nXU5IoXPR6JAsz/uqNXcjjc5peUesLxY",
-          "s": "enc2:L3ekbjg6fR6uPoWCxvwmAg==.ANoq+Dpysc8=.oO3sd1ABuLnA8IWi/eVNTg=="
+          "v": "enc3:GR1KC1KjbJsn+ztZ.BPI0X7USdyE5Ao80cEpzxNYghwCTFkUT",
+          "s": "enc2:GW3RKnQ7WrTeFEOYiekyuQ==.0GGDc+E2g8I=.OYnL95RLKW9CsSEGphzGLw=="
         }
       }
     },
