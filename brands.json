@@ -45,6 +45,7 @@
       "reward": "쿼드쎄라 틴즈 (20만원 상당)",
       "deadline": "11/11",
       "announce": "11/16",
+      "uploadDate": "11월 4주차",
       "status": "open",
       "collab": true,
       "secondaryUse": true,
@@ -57,7 +58,8 @@
         "reels/quadthera-1-mw9fbnjv.mp4",
         "reels/quadthera-2-mw9fbnkc.mp4"
       ],
-      "tierHashes": []
+      "tierHashes": [],
+      "feeEnc": ""
     },
     {
       "id": "quadthera-2",
