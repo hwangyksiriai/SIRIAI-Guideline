@@ -60,26 +60,29 @@
       "tierHashes": []
     },
     {
-      "id": "keepintouch",
-      "name": "Keepintouch",
-      "summary": "키핀터치 – 립부터 치크까지, 나만의 컬러로 완성하는 생기 있는 메이크업",
-      "account": "@keepintouch",
-      "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
-      "hashNote": "-",
-      "reward": "블러셔 or 립",
-      "deadline": "11.12 마감",
+      "id": "quadthera-2",
+      "name": "QUADTHERA (여성 인플루언서)",
+      "summary": "쿼드쎄라 미니티탄 – 피부 고민부터 데일리 컨디션까지, 집에서 간편하게 시작하는 홈케어",
+      "account": "quadthera.official",
+      "hashtags": "#광고 #쿼드쎄라 #미니티탄 #쿼드쎄라미니티탄",
+      "hashNote": "광고 표기를 멘션 맨 앞에 배치",
+      "reward": "쿼드쎄라 미니티탄 (신제품)",
+      "deadline": "11/11",
       "announce": "11/16",
       "status": "open",
       "collab": true,
       "secondaryUse": true,
       "hot": true,
-      "color": "#fbd5eb",
+      "color": "#77fdfb",
       "category": "뷰티",
       "make": [],
-      "upload": [],
+      "upload": [
+        "피부 컨디션 관리 또는 피부 트러블 케어를 중심으로 한 실사용 콘텐츠 제작",
+        "※ 자세한 촬영 가이드라인은 추후 별도 안내 예정입니다."
+      ],
       "reels": [
-        "reels/hera-1-mw3aawae.mp4",
-        "reels/hera-2-mw3aazeu.mp4"
+        "reels/quadthera-2-1-mw9fkihn.mp4",
+        "reels/quadthera-2-2-mw9fkiii.mp4"
       ],
       "tierHashes": []
     },
@@ -108,29 +111,26 @@
       "tierHashes": []
     },
     {
-      "id": "quadthera-2",
-      "name": "QUADTHERA (여성 인플루언서)",
-      "summary": "쿼드쎄라 미니티탄 – 피부 고민부터 데일리 컨디션까지, 집에서 간편하게 시작하는 홈케어",
-      "account": "quadthera.official",
-      "hashtags": "#광고 #쿼드쎄라 #미니티탄 #쿼드쎄라미니티탄",
-      "hashNote": "광고 표기를 멘션 맨 앞에 배치",
-      "reward": "쿼드쎄라 미니티탄 (신제품)",
-      "deadline": "11/11",
+      "id": "keepintouch",
+      "name": "Keepintouch",
+      "summary": "키핀터치 – 립부터 치크까지, 나만의 컬러로 완성하는 생기 있는 메이크업",
+      "account": "@keepintouch",
+      "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
+      "hashNote": "-",
+      "reward": "블러셔 or 립",
+      "deadline": "11.12 마감",
       "announce": "11/16",
       "status": "open",
       "collab": true,
       "secondaryUse": true,
       "hot": true,
-      "color": "#77fdfb",
+      "color": "#fbd5eb",
       "category": "뷰티",
       "make": [],
-      "upload": [
-        "피부 컨디션 관리 또는 피부 트러블 케어를 중심으로 한 실사용 콘텐츠 제작",
-        "※ 자세한 촬영 가이드라인은 추후 별도 안내 예정입니다."
-      ],
+      "upload": [],
       "reels": [
-        "reels/quadthera-2-1-mw9fkihn.mp4",
-        "reels/quadthera-2-2-mw9fkiii.mp4"
+        "reels/hera-1-mw3aawae.mp4",
+        "reels/hera-2-mw3aazeu.mp4"
       ],
       "tierHashes": []
     }
