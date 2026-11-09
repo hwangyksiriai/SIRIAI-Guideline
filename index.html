@@ -294,7 +294,7 @@ async function loadData(){
     const tf = pageHash && b.tierFees?.[pageHash];
     b.sheetFee = tf?.s || '';
     const fee = tf?.v ? await openFee(PAGE, tf.v) : '';
-    if (fee) b.facts.splice(2, 0, ['고료', fee]);
+    if (fee) b.facts.splice(2, 0, ['고료', fee === '고료 없음' ? '없음' : fee]);
   }
 }
 async function openFee(code, s){

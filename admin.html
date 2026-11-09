@@ -65,8 +65,11 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
 .order-bar{ position:sticky; bottom:12px; z-index:6; margin-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 14px; border-radius:14px; background:var(--ink); color:#fff; box-shadow:0 14px 30px -14px rgba(0,0,0,.5); }
 .order-bar[hidden]{ display:none; }
 .tier-rows{ display:flex; flex-direction:column; gap:8px; }
-.tier-row{ display:grid; grid-template-columns:minmax(150px, 40%) 1fr; gap:8px; align-items:center; }
-@media (max-width:520px){ .tier-row{ grid-template-columns:1fr; gap:6px; padding-bottom:6px; border-bottom:1px dashed var(--line); } }
+.tier-row{ display:grid; grid-template-columns:130px 1fr auto; gap:8px; align-items:center; }
+.tier-row .tier-name{ font-size:13px; }
+.tier-row .input:disabled{ opacity:.45; }
+.tier-row .nofee{ white-space:nowrap; }
+@media (max-width:520px){ .tier-row{ grid-template-columns:1fr auto; } .tier-row .tier-name{ grid-column:1/-1; } }
 .order-bar span{ flex:1 1 180px; font-size:13px; font-weight:600; }
 .order-bar .btn:not(.primary){ background:transparent; color:#fff; border-color:rgba(255,255,255,.35); }
 .meta em.fee{ background:#171310; color:#fff; }
@@ -386,7 +389,7 @@ function renderList(){
       <span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="5.5" cy="3.5" r="1.4"/><circle cx="10.5" cy="3.5" r="1.4"/><circle cx="5.5" cy="8" r="1.4"/><circle cx="10.5" cy="8" r="1.4"/><circle cx="5.5" cy="12.5" r="1.4"/><circle cx="10.5" cy="12.5" r="1.4"/></svg></span>
       <span class="mono" style="background:${esc(b.color || '#171310')}">${esc((b.name || '?').slice(0, 2))}</span>
       <div class="txt"><b>${esc(b.name)}</b><span>${esc(b.summary)}</span>
-        <div class="meta">${st === 'open' ? `<em class="${b.hot ? 'hot' : ''}">${esc(b.deadline || '상시 모집')}</em>` : `<em class="${st}">${STATUS[st]}</em>`}<em class="fee" data-fee="${esc(b.id)}" hidden></em><em>레퍼런스 ${(b.reels || []).filter(Boolean).length}/2</em>${tierLabels(b).map((l) => `<em>${esc(l)}</em>`).join('')}</div></div>
+        <div class="meta">${st === 'open' ? `<em class="${b.hot ? 'hot' : ''}">${esc(b.deadline || '상시 모집')}</em>` : `<em class="${st}">${STATUS[st]}</em>`}<em class="fee" data-fee="${esc(b.id)}" hidden></em><em>레퍼런스 ${(b.reels || []).filter(Boolean).length}/2</em>${b.tierHashes?.length ? tierLabels(b).map((l) => `<em>${esc(l)}만</em>`).join('') : ''}</div></div>
       <div class="ops">
         <button class="icon" data-links="${esc(b.id)}" aria-label="보낼 링크" title="보낼 링크">${svg('link')}</button>
         <button class="icon" data-dup="${esc(b.id)}" aria-label="복제해서 새 캠페인" title="복제해서 새 캠페인">${svg('dup')}</button>
@@ -398,6 +401,7 @@ function renderList(){
     </div>`; }).join('') : `<div class="empty">진행 중인 캠페인이 없어요.<br>‘새 브랜드’로 추가해주세요.</div>`;
 }
 
+const NO_FEE = '고료 없음';
 const feeLabel = (f) => Number(f) % 10000 === 0 ? Number(f) / 10000 + '만원' : Number(f).toLocaleString() + '원';
 /* 목록 카드에 링크별 고료 요약 (예: 고료 5만원 · 10만원 · 제품만) */
 async function fillFees(L){
@@ -537,9 +541,10 @@ async function openEditor(id, dup){
   }
   editing = { isNew: !orig, origId: orig?.id || '', base: orig ? JSON.parse(JSON.stringify(orig)) : null,
     reels: b.reels.map((p) => /^https?:\/\//i.test(p) ? { path: '', link: p, file: null, url: '', removed: false } : { path: p, link: '', file: null, url: '', removed: false }) };
-  const tierChecks = TIERS.map((t) => `<div class="tier-row">
-      <label class="check"><input type="checkbox" name="tier" value="${esc(t.code)}" ${b.tierHashes?.includes(TIER_HASH[t.code]) ? 'checked' : ''}>${esc(t.label)} 링크</label>
-      <input class="input" name="fee-${esc(t.code)}" value="${esc(tierFee[t.code])}" placeholder="예) ${esc(feeLabel(t.fee))} · 제품만 제공"></div>`).join('');
+  const tierChecks = TIERS.map((t) => { const none = tierFee[t.code] === NO_FEE; return `<div class="tier-row">
+      <b class="tier-name">${esc(t.label)} 링크</b>
+      <input class="input" name="fee-${esc(t.code)}" value="${esc(none ? '' : tierFee[t.code])}" placeholder="${none ? NO_FEE : '예) ' + esc(feeLabel(t.fee))}" ${none ? 'disabled' : ''}>
+      <label class="check nofee"><input type="checkbox" data-nofee="${esc(t.code)}" ${none ? 'checked' : ''}>고료 X</label></div>`; }).join('');
   $('editorRoot').innerHTML = `<div class="overlay" id="ov"><form class="editor" id="ed" novalidate>
     <h2>${dup ? `${esc(src.name)} 복제해서 새 캠페인` : editing.isNew ? '새 브랜드' : esc(b.name) + ' 수정'}<button type="button" class="icon close" id="edClose" aria-label="닫기">${svg('x')}</button></h2>
     ${dup ? `<p class="desc">내용을 그대로 가져왔어요. 브랜드명과 바뀐 부분만 고쳐서 저장하세요.</p>` : ''}
@@ -590,9 +595,9 @@ async function openEditor(id, dup){
     </div>
     <p class="note">켜두면 가이드에 ‘필수’ 표시만 짧게 나가요. 자세한 내용은 실제 가이드라인으로 안내해주세요. 지원서에서 동의해야 지원할 수 있고, 동의 여부는 시트에 기록돼요.</p>
 
-    <p class="sec">링크별 노출 · 고료</p>
+    <p class="sec">링크별 고료</p>
     <div class="tier-rows">${tierChecks}</div>
-    <p class="note">체크한 링크에서만 이 캠페인이 보여요 (아무것도 체크하지 않으면 모든 링크). 오른쪽 고료는 <b>그 링크로 들어온 인플루언서에게만</b> ‘고료’로 보이고, 지원서 시트의 ‘캠페인 고료’ 칸에도 들어가요. 다른 링크의 고료는 보이지 않아요. 비우면 고료 줄이 안 보여요.</p>
+    <p class="note">이 캠페인은 모든 링크에서 보여요. 링크마다 고료만 따로 적어요. 고료는 <b>그 링크로 들어온 인플루언서에게만</b> 보이고, 지원서 시트의 ‘캠페인 고료’ 칸에도 들어가요. 고료가 없으면 <b>고료 X</b>를 체크하세요 (가이드에 ‘고료 없음’으로 보여요).</p>
 
     <div class="editor-foot">
       <button type="submit" class="btn primary" style="flex:1">저장</button>
@@ -603,6 +608,11 @@ async function openEditor(id, dup){
   if (editing.isNew) f.name.addEventListener('input', () => { if (!f.id.dataset.touched) f.id.value = f.name.value.trim() ? uniqueId(f.name.value) : ''; });
   f.id.addEventListener('input', () => { f.id.dataset.touched = '1'; });
   f.addEventListener('input', (e) => e.target.classList?.remove('bad'));
+  f.querySelectorAll('[data-nofee]').forEach((cb) => cb.addEventListener('change', () => {
+    const inp = f[`fee-${cb.dataset.nofee}`]; inp.disabled = cb.checked;
+    if (cb.checked) { inp.value = ''; inp.placeholder = NO_FEE; }
+    if (!cb.checked && !inp.value) inp.value = feeLabel(TIERS.find((t) => t.code === cb.dataset.nofee).fee);
+  }));
   f.addEventListener('submit', (e) => { e.preventDefault(); saveBrand(); });
   $('edClose').onclick = closeEditor;   // 닫기는 X 버튼으로만 (바깥 클릭·ESC로는 안 닫혀요)
   document.body.style.overflow = 'hidden';
@@ -674,18 +684,15 @@ async function saveBrand(){
   if (!/^[a-z0-9][a-z0-9-]{1,29}$/.test(b.id)) bad.push('id');
   if (editing.isNew && DATA.brands.some((x) => x.id === b.id)) { bad.push('id'); toast('같은 ID의 브랜드가 이미 있어요', true); }
   if (bad.length) { bad.forEach((n) => f[n].classList.add('bad')); f[bad[0]].focus(); if (!editing.isNew || !DATA.brands.some((x) => x.id === b.id)) toast('표시된 칸을 확인해주세요', true); return; }
-  /* 노출 링크 */
-  const codes = [...f.querySelectorAll('input[name=tier]:checked')].map((x) => x.value);
-  b.tierHashes = codes.length === TIERS.length ? [] : codes.map((c) => TIER_HASH[c]);
+  b.tierHashes = [];   // 모든 링크에서 보여요 (링크마다 고료만 다름)
 
   busy('저장 중…');
   try {
     /* 링크별 고료: v = 그 링크 코드로만 풀리는 값(가이드용), s = 시트만 풀 수 있는 값 */
     b.tierFees = {};
     for (const t of TIERS) {
-      const fee = f[`fee-${t.code}`].value.trim();
-      const shown = !codes.length || codes.includes(t.code);
-      if (fee && shown) b.tierFees[TIER_HASH[t.code]] = { v: await SiriaiVault.sealForCode(t.code, fee), s: await SiriaiVault.seal(fee) };
+      const fee = f.querySelector(`[data-nofee="${t.code}"]`).checked ? NO_FEE : f[`fee-${t.code}`].value.trim();
+      if (fee) b.tierFees[TIER_HASH[t.code]] = { v: await SiriaiVault.sealForCode(t.code, fee), s: await SiriaiVault.seal(fee) };
     }
     /* 릴스: 새 파일은 같은 커밋에 넣고, 바뀌거나 비운 옛 파일은 같은 커밋에서 지움 */
     const files = [], deletes = [];
