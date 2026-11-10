@@ -291,7 +291,8 @@ async function loadData(){
   BRANDS = all.filter((b) => !b.tierHashes?.length || b.tierHashes.includes(pageHash));
   /* 캠페인 × 링크별 고료: 이 링크 코드로만 풀리는 값이라 다른 링크의 고료는 보이지 않아요 */
   for (const b of BRANDS) {
-    const tf = pageHash && b.tierFees?.[pageHash];
+    /* 따로 적은 고료가 없으면 그 링크의 기본 고료(5만/10만/20만원)를 보여줘요 */
+    const tf = pageHash && (b.tierFees?.[pageHash] || data.settings?.tierDefaults?.[pageHash]);
     b.sheetFee = tf?.s || '';
     const fee = tf?.v ? await openFee(PAGE, tf.v) : '';
     if (fee) b.facts.splice(2, 0, ['고료', fee === '고료 없음' ? '없음' : fee]);

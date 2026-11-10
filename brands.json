@@ -181,6 +181,11 @@
     }
   ],
   "settings": {
-    "submitUrl": "https://script.google.com/macros/s/AKfycbzSmm95y0OHXX6y2zHJFEqK7U6gF0vReDngTivuo3Kv6ziYCeD-NsJOKYLwoPd6Nczt/exec"
+    "submitUrl": "https://script.google.com/macros/s/AKfycbzSmm95y0OHXX6y2zHJFEqK7U6gF0vReDngTivuo3Kv6ziYCeD-NsJOKYLwoPd6Nczt/exec",
+    "tierDefaults": {
+      "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": { "v": "enc3:AE0i0CQiqFHLqi7S.CEYEhB17Qu5HlwQWgFW0rx9LmRIyGsc=", "s": "enc2:49fud1LaoQob2uN2zFwShQ==.yVPLdgpXig==.k1wataj/fByEkq4diWuL2w==" },
+      "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": { "v": "enc3:+JafTqMS0aogGtzA.P5ONMSGXVBumdWBicRmasFZn2uwxR/Zj", "s": "enc2:/VmE6xt28PSD24xNNrn6cg==.q/58Q6bYu5E=.gDaVvs4IA+InWnx2BUgvoQ==" },
+      "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": { "v": "enc3:OhrZVnbnNyx+m/ZO.vVOAviG9aWSHQ6C+yXrj2AA7ULviD8d3", "s": "enc2:FDtL9kxJX5e4VnvZ7qk9jw==.c9h6OndXNMQ=.E3h/hEXdR/fhO6gXjB7Fkw==" }
+    }
   }
 }
