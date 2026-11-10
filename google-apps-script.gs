@@ -6,8 +6,8 @@
  *       어드민의 '지원서 접수 연결'에 붙여넣으세요.
  * 코드를 고친 뒤에는 배포 > 배포 관리 > 수정(연필) > 버전: 새 버전 으로 다시 배포해야 반영돼요.
  *
- * 지원한 브랜드마다 한 줄씩 들어가요 (두 브랜드에 지원하면 두 줄).
- * 칸 구성이 바뀌면 예전 탭은 '지원서 (이전)' 으로 이름만 바뀌고 새 '지원서' 탭이 생겨요.
+ * 지원한 브랜드마다 한 줄씩 '지원서' 탭 하나에만 쌓여요 (두 브랜드에 지원하면 두 줄).
+ * 칸은 1행의 이름으로 찾아서 넣어요. 칸 순서를 바꾸거나 오른쪽에 메모 칸을 추가해도 돼요.
  */
 
 /* 새 지원이 오면 이 주소로 메일 알림. 비워두면 알림 없음. 여러 명은 쉼표로. */
@@ -48,17 +48,21 @@ function doPost(e) {
     const now = new Date();
 
     const fees = (d.fees || []).map(unsealFee_);
-    const rows = names.map((brand, i) => [
+    const values = names.map((brand, i) => [
       now, fee, safe_(fees[i] || ''), safe_(brand), safe_(name), phone, safe_(d.email), instaUrl || safe_(d.instagram),
       zip, safe_(d.address), safe_(d.message),
       agree_(d.collabAgree), agree_(d.secondaryAgree),
     ]);
+    /* 칸 이름으로 찾아서 넣어요 — 칸 순서를 바꾸거나 메모 칸을 추가해도 그대로 쌓여요 */
+    const col = columnMap_(sheet);
+    const width = sheet.getLastColumn();
+    const rows = values.map((v) => { const r = new Array(width).fill(''); HEADERS.forEach((h, j) => { r[col[h] - 1] = v[j]; }); return r; });
     const start = sheet.getLastRow() + 1;
-    TEXT_COLS.forEach((h) => sheet.getRange(start, COL(h), rows.length, 1).setNumberFormat('@'));
-    sheet.getRange(start, 1, rows.length, HEADERS.length).setValues(rows);
+    TEXT_COLS.forEach((h) => sheet.getRange(start, col[h], rows.length, 1).setNumberFormat('@'));
+    sheet.getRange(start, 1, rows.length, width).setValues(rows);
     if (instaUrl) {   // 인스타그램 칸을 눌러 바로 프로필로 이동
       const link = SpreadsheetApp.newRichTextValue().setText(instaUrl).setLinkUrl(instaUrl).build();
-      sheet.getRange(start, COL('인스타그램'), rows.length, 1).setRichTextValues(rows.map(() => [link]));
+      sheet.getRange(start, col['인스타그램'], rows.length, 1).setRichTextValues(rows.map(() => [link]));
     }
 
     if (NOTIFY_EMAIL && d.test !== true) {
@@ -81,24 +85,11 @@ function doGet() {
   return json_({ ok: true, message: '연결되었습니다' });
 }
 
+/* '지원서' 탭은 하나만 써요. 탭을 새로 만들거나 옮기지 않아요. */
 function getSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
-  if (sheet && sheet.getLastRow() > 0) {
-    const head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
-    /* 새 칸만 추가된 경우: 기존 데이터는 그대로 두고 그 자리에 빈 칸을 끼워 넣어요 */
-    if (head.every((h) => HEADERS.includes(h))) {
-      HEADERS.forEach((h, i) => {
-        if (head[i] === h || head.includes(h)) return;
-        sheet.insertColumnBefore(i + 1);
-        sheet.getRange(1, i + 1).setValue(h).setFontWeight('bold').setBackground('#fde4e7');
-        head.splice(i, 0, h);
-      });
-    }
-    if (head.join('|') === HEADERS.join('|')) return sheet;
-    sheet.setName(SHEET_NAME + ' (이전 ' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'MMdd HHmm') + ')');   // 칸 구성이 바뀜 → 예전 탭 보관
-    sheet = null;
-  }
+  if (sheet && sheet.getLastRow() > 0) return sheet;
   if (!sheet) sheet = ss.insertSheet(SHEET_NAME, 0);
   sheet.appendRow(HEADERS);
   sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#fde4e7');
@@ -106,6 +97,21 @@ function getSheet_() {
   sheet.getRange('A:A').setNumberFormat('yyyy-mm-dd hh:mm');
   TEXT_COLS.forEach((h) => sheet.getRange(2, COL(h), sheet.getMaxRows() - 1, 1).setNumberFormat('@'));
   return sheet;
+}
+
+/* 1행 칸 이름 → 열 번호. 없는 칸은 지우지 않고 맨 오른쪽에 새로 만들어요 (메모 칸 등 다른 칸은 건드리지 않음) */
+function columnMap_(sheet) {
+  const width = Math.max(sheet.getLastColumn(), 1);
+  const head = sheet.getRange(1, 1, 1, width).getValues()[0].map((h) => String(h).trim());
+  const col = {};
+  head.forEach((h, i) => { if (h && !(h in col)) col[h] = i + 1; });
+  let next = width + 1;
+  HEADERS.forEach((h) => {
+    if (col[h]) return;
+    sheet.getRange(1, next).setValue(h).setFontWeight('bold').setBackground('#fde4e7');
+    col[h] = next++;
+  });
+  return col;
 }
 
 /* 어드민이 잠가 둔 캠페인 고료(enc2:…) 풀기 — HMAC-SHA256 키스트림, 태그가 안 맞으면 '' */
