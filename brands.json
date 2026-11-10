@@ -140,7 +140,20 @@
         "reels/offlow-2-mw6lhi02.mp4"
       ],
       "tierHashes": [],
-      "feeEnc": ""
+      "tierFees": {
+        "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
+          "v": "enc3:jxGdfQwxB0TS2DkG.ovMPJCrX7auRdnHw583xS7iJABbaN0E=",
+          "s": "enc2:FnUhrQCZjumYlZs4Ln74gg==.vCb5wxNC3Q==.c6bVOqK/TuvXKH8Y7qyLRw=="
+        },
+        "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
+          "v": "enc3:uGtXSOb31zinQSdR.O0TSi12bg03M1DWdU887SKRoGPo2Q586",
+          "s": "enc2:66yutSUvAJsPISI5j2IqfQ==.25LeGGSgnOc=.WKeV48vFHgbACIP2r7B72w=="
+        },
+        "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
+          "v": "enc3:yPZnhR/blu3ORZ4e.EH2SOTkyZJq6LNieQfApOXFAoPdJ58ey",
+          "s": "enc2:Y1SOrCudnePJqsm+OjBaKw==.2BKq+7Rz7bA=.kNgpUwidRbjQi1PtK8VtDw=="
+        }
+      }
     },
     {
       "id": "keepintouch",
