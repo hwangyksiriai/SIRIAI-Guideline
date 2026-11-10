@@ -23,7 +23,7 @@ const RATES = {
 const SHEET_KEY = '';
 
 const SHEET_NAME = '지원서';
-const HEADERS = ['접수일시', '고료', '캠페인 고료', '브랜드', '이름', '연락처', '이메일', '인스타그램', '우편번호', '주소', '하고 싶은 말',
+const HEADERS = ['접수일시', '지원 링크', '캠페인 고료', '브랜드', '이름', '연락처', '이메일', '인스타그램', '우편번호', '주소', '하고 싶은 말',
                  '공동 작업자 동의', '2차 활용 동의'];
 const COL = (name) => HEADERS.indexOf(name) + 1;          // 열 번호 (1부터)
 const TEXT_COLS = ['연락처', '우편번호'];                  // 앞자리 0 이 지워지지 않게 '일반 텍스트' 서식
@@ -39,7 +39,8 @@ function doPost(e) {
     if (!names.length) return json_({ ok: false, error: 'no brand' });
 
     const code = String(d.page || '').trim();
-    const fee = RATES[code] || (code ? '확인 필요 (' + code + ')' : '링크 없음');
+    /* 어느 링크로 들어왔는지 — '5만원 링크' / '비공개 링크' (실제 고료는 '캠페인 고료' 칸) */
+    const fee = RATES[code] ? RATES[code] + ' 링크' : (code ? '확인 필요 (' + code + ')' : '비공개 링크');
     const insta = normInsta_(d.instagram);
     const instaUrl = insta ? 'https://www.instagram.com/' + insta + '/' : '';
     const phone = phone_(d.phone);
@@ -68,7 +69,7 @@ function doPost(e) {
     if (NOTIFY_EMAIL && d.test !== true) {
       try {
         MailApp.sendEmail(NOTIFY_EMAIL, `[시리아이] 새 지원 · ${names.join(', ')} · ${d.name}`,
-          `브랜드: ${names.join(', ')}\n고료: ${fee}${fees.some(Boolean) ? ' / 캠페인 고료: ' + fees.join(', ') : ''}\n이름: ${d.name}\n인스타그램: ${instaUrl || d.instagram}\n연락처: ${phone}\n\n시트: ${SpreadsheetApp.getActiveSpreadsheet().getUrl()}`);
+          `브랜드: ${names.join(', ')}\n지원 링크: ${fee}${fees.some(Boolean) ? ' / 캠페인 고료: ' + fees.join(', ') : ''}\n이름: ${d.name}\n인스타그램: ${instaUrl || d.instagram}\n연락처: ${phone}\n\n시트: ${SpreadsheetApp.getActiveSpreadsheet().getUrl()}`);
       } catch (err) {}
     }
     return json_({ ok: true });   // 고료 정보는 응답에 넣지 않음
@@ -103,6 +104,12 @@ function getSheet_() {
 function columnMap_(sheet) {
   const width = Math.max(sheet.getLastColumn(), 1);
   const head = sheet.getRange(1, 1, 1, width).getValues()[0].map((h) => String(h).trim());
+  /* 예전 칸 이름은 새 이름으로 바꿔요 ('고료' → '지원 링크') */
+  const RENAMED = { '고료': '지원 링크' };
+  head.forEach((h, i) => {
+    const to = RENAMED[h];
+    if (to && !head.includes(to)) { sheet.getRange(1, i + 1).setValue(to); head[i] = to; }
+  });
   const col = {};
   head.forEach((h, i) => { if (h && !(h in col)) col[h] = i + 1; });
   let next = width + 1;
