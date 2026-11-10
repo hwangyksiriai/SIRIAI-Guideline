@@ -54,7 +54,7 @@
   <section class="card">
     <p class="eyebrow">GUIDE LINKS</p>
     <h2>고료별 가이드라인 링크</h2>
-    <p class="desc">인플루언서에게 맞는 고료의 링크를 보내주세요. 링크 안에서는 고료가 보이지 않고, 허브로 돌아오는 길도 없어요.</p>
+    <p class="desc">인플루언서에게 맞는 링크를 보내주세요. 각 링크에서는 <b>그 링크의 고료만</b> 보이고(캠페인별 금액은 브랜드 관리 → 고료 관리), 허브로 돌아오는 길은 없어요. 고료를 아예 보여주지 않으려면 맨 아래 <b>고료 비공개 링크</b>를 보내세요.</p>
     <div id="tiers"></div>
   </section>
 
@@ -98,7 +98,19 @@ async function render(){
         <a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>새 탭에서 보기</a>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + (() => {
+    /* 고료 비공개: 코드 없는 기본 주소 — 가이드에 고료 줄이 안 나오고, 시트 고료 칸은 '링크 없음' */
+    const url = new URL('./', location.href).href;
+    return `<div class="tier">
+      <div class="tier-top"><b>고료 비공개</b><span class="brands" data-brands="">브랜드 확인 중…</span></div>
+      <span class="url">${esc(url)}</span>
+      <p class="sheet-hint">가이드에 고료가 보이지 않아요. 시트 ‘고료’ 칸에는 ‘링크 없음’, ‘캠페인 고료’는 비어서 들어와요.</p>
+      <div class="actions">
+        <button class="btn" data-copy="${esc(url)}"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>링크 복사</button>
+        <a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>새 탭에서 보기</a>
+      </div>
+    </div>`;
+  })();
 
   /* 링크별로 실제 노출되는 브랜드 (brands.json 의 tierHashes 기준) */
   try {
@@ -108,6 +120,8 @@ async function render(){
       const names = (data.brands || []).filter((b) => !b.tierHashes?.length || b.tierHashes.includes(h)).map((b) => b.name);
       document.querySelector(`[data-brands="${t.code}"]`).textContent = names.join(' · ') || '노출 브랜드 없음';
     }
+    const open = (data.brands || []).filter((b) => !b.tierHashes?.length).map((b) => b.name);
+    document.querySelector('[data-brands=""]').textContent = open.join(' · ') || '노출 브랜드 없음';
   } catch { document.querySelectorAll('[data-brands]').forEach((el) => { el.textContent = ''; }); }
 }
 

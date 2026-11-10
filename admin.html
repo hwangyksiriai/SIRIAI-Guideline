@@ -65,6 +65,12 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
 .order-bar{ position:sticky; bottom:12px; z-index:6; margin-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 14px; border-radius:14px; background:var(--ink); color:#fff; box-shadow:0 14px 30px -14px rgba(0,0,0,.5); }
 .order-bar[hidden]{ display:none; }
 .tier-rows{ display:flex; flex-direction:column; gap:8px; }
+.fee-grid{ display:flex; flex-direction:column; gap:10px; }
+.fee-brand{ border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
+.fee-brand > b{ display:flex; align-items:center; gap:8px; font-size:15px; margin-bottom:10px; }
+.fee-brand > b .mono{ width:26px; height:26px; font-size:10px; }
+.fee-brand .tier-rows{ gap:6px; }
+html{ scroll-behavior:smooth; }
 .tier-row{ display:grid; grid-template-columns:130px 1fr auto; gap:8px; align-items:center; }
 .tier-row .tier-name{ font-size:13px; }
 .tier-row .input:disabled{ opacity:.45; }
@@ -137,6 +143,7 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
     <div class="right">
       <a class="pill" href="hub.html">링크</a>
       <span class="pill on">브랜드 관리</span>
+      <a class="pill" href="#fees">고료 관리</a>
       <button class="pill" id="logout">잠그기</button>
     </div>
   </header>
@@ -160,6 +167,19 @@ textarea.input{ resize:vertical; min-height:88px; line-height:1.55; }
       <button class="btn" id="orderUndo">되돌리기</button>
       <button class="btn primary" id="orderSave">순서 저장</button>
     </div>
+  </section>
+
+  <!-- 고료 관리: 캠페인 × 링크 고료를 한 화면에서 -->
+  <section class="card" id="fees">
+    <p class="eyebrow">FEES</p>
+    <h2>고료 관리</h2>
+    <p class="desc">캠페인마다 링크별 고료를 한 번에 고쳐요. 인플루언서는 <b>자기가 받은 링크의 고료만</b> 보고, 같은 값이 시트 ‘캠페인 고료’ 칸에 들어가요. 고료가 없으면 <b>고료 X</b>를 체크하세요.</p>
+    <div id="feeGrid" class="fee-grid"></div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn" id="feeReset">기본값으로 되돌리기</button>
+      <button class="btn primary" id="feeSave">고료 저장</button>
+    </div>
+    <p class="note">고료를 아예 보여주지 않으려면 <a href="hub.html">링크</a> 화면의 <b>고료 비공개 링크</b>를 보내세요.</p>
   </section>
 
   <!-- 진행한 브랜드 -->
@@ -501,7 +521,74 @@ async function saveSheetUrl(){
   } catch (e) { toast(errMsg(e), true); }
   finally { idle(); }
 }
-function renderPast(){ $('past').value = (DATA.pastBrands || []).join('\n'); }
+function renderPast(){ $('past').value = (DATA.pastBrands || []).join('\n'); renderFees(); }
+
+/* ── 고료 관리: 캠페인 × 링크 ── */
+let feeRender = 0, feeDirty = false;
+async function renderFees(force){
+  if (feeDirty && !force) return;   // 고치는 중인 고료는 다른 새로고침으로 지우지 않기
+  feeDirty = false;
+  const my = ++feeRender, box = $('feeGrid');
+  if (!DATA.brands.length) { box.innerHTML = '<div class="empty">캠페인이 없어요.</div>'; return; }
+  const rows = [];
+  for (const b of DATA.brands) {
+    const cells = [];
+    for (const t of TIERS) {
+      const saved = b.tierFees?.[TIER_HASH[t.code]];
+      const fee = saved ? await SiriaiVault.openForCode(t.code, saved.v) : feeLabel(t.fee);
+      const none = fee === NO_FEE;
+      cells.push(`<div class="tier-row">
+        <b class="tier-name">${esc(t.label)} 링크</b>
+        <input class="input" data-fee-in="${esc(b.id)}|${esc(t.code)}" value="${esc(none ? '' : fee)}" placeholder="${none ? NO_FEE : '예) ' + esc(feeLabel(t.fee))}" ${none ? 'disabled' : ''}>
+        <label class="check nofee"><input type="checkbox" data-fee-x="${esc(b.id)}|${esc(t.code)}" ${none ? 'checked' : ''}>고료 X</label></div>`);
+    }
+    rows.push(`<div class="fee-brand"><b><span class="mono" style="background:${esc(b.color || '#171310')}">${esc((b.name || '?').slice(0, 2))}</span>${esc(b.name)}</b><div class="tier-rows">${cells.join('')}</div></div>`);
+  }
+  if (my !== feeRender) return;   // 그사이 다시 그렸으면 버림
+  box.innerHTML = rows.join('');
+}
+$('feeGrid').addEventListener('input', () => { feeDirty = true; });
+$('feeGrid').addEventListener('change', (e) => {
+  feeDirty = true;
+  const x = e.target.closest('[data-fee-x]'); if (!x) return;
+  const inp = document.querySelector(`[data-fee-in="${CSS.escape(x.dataset.feeX)}"]`);
+  inp.disabled = x.checked;
+  if (x.checked) { inp.value = ''; inp.placeholder = NO_FEE; }
+  else if (!inp.value) { const t = TIERS.find((t) => t.code === x.dataset.feeX.split('|')[1]); inp.value = feeLabel(t.fee); }
+});
+$('feeReset').onclick = () => {
+  if (!confirm('모든 캠페인의 고료 칸을 링크 기본값(5만/10만/20만원)으로 채울까요? 저장을 눌러야 반영돼요.')) return;
+  document.querySelectorAll('[data-fee-x]').forEach((x) => { x.checked = false; });
+  document.querySelectorAll('[data-fee-in]').forEach((inp) => {
+    const t = TIERS.find((t) => t.code === inp.dataset.feeIn.split('|')[1]);
+    inp.disabled = false; inp.value = feeLabel(t.fee);
+  });
+  feeDirty = true;
+};
+$('feeSave').onclick = async () => {
+  if (needToken()) return;
+  busy('고료 저장 중…');
+  try {
+    const next = {};   // id → tierFees
+    for (const b of DATA.brands) {
+      next[b.id] = {};
+      for (const t of TIERS) {
+        const key = `${b.id}|${t.code}`;
+        const x = document.querySelector(`[data-fee-x="${CSS.escape(key)}"]`);
+        const inp = document.querySelector(`[data-fee-in="${CSS.escape(key)}"]`);
+        if (!x || !inp) continue;
+        const fee = x.checked ? NO_FEE : inp.value.trim();
+        if (fee) next[b.id][TIER_HASH[t.code]] = { v: await SiriaiVault.sealForCode(t.code, fee), s: await SiriaiVault.seal(fee) };
+      }
+    }
+    await commitChange({
+      message: 'admin: 고료 수정',
+      mutate: (d) => { for (const b of d.brands) if (next[b.id]) b.tierFees = next[b.id]; },   // 그사이 새로 생긴 캠페인은 건드리지 않음
+    });
+    renderList(); renderFees(true); toast('고료를 저장했어요. 1분쯤 뒤 사이트에 반영돼요');
+  } catch (e) { toast(errMsg(e), true); }
+  finally { idle(); }
+};
 
 /* ── 편집 ── */
 const blank = () => ({ id:'', name:'', summary:'', account:'', hashtags:'#광고 ', hashNote:'광고 표기를 멘션 맨 앞에 배치', reward:'제품', deadline:'',
@@ -722,7 +809,7 @@ async function saveBrand(){
         if (idx >= 0) d.brands[idx] = b; else d.brands.push(b);
       },
     });
-    closeEditor(); renderList();
+    closeEditor(); renderList(); renderFees();
     toast('저장했어요. 1분쯤 뒤 사이트에 반영돼요');
   } catch (e) {
     /* 실패해도 편집 창은 그대로 — 고친 내용이 날아가지 않게 */
@@ -748,7 +835,7 @@ async function deleteBrand(id){
       },
       deletes: (d) => unused(gone, d),
     });
-    renderList(); toast('삭제했어요. 1분쯤 뒤 사이트에 반영돼요');
+    renderList(); renderFees(); toast('삭제했어요. 1분쯤 뒤 사이트에 반영돼요');
   } catch (e) { toast(errMsg(e), true); try { await loadData(); renderList(); } catch {} }
   finally { idle(); }
 }
