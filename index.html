@@ -45,7 +45,8 @@ body[data-view="apply"] #apply{ animation:fadeIn .35s cubic-bezier(.16,1,.3,1); 
 .back svg{ width:16px; height:16px; stroke:currentColor; stroke-width:2.2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
 
 /* 가이드 안 브랜드 탭 — 포트폴리오 '색조·스킨·해외' 버튼과 동일 */
-.g-chips{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; margin:0 0 16px; }
+.g-chips{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+.g-chips .bchip{ white-space:nowrap; padding:8px 14px; }
 .g-chips::-webkit-scrollbar{ display:none; }
 
 /* ── 1. Hero (포트폴리오 홈과 동일) ───────────────────────── */
