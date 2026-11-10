@@ -178,6 +178,45 @@
         "reels/hera-2-mw3aazeu.mp4"
       ],
       "tierHashes": []
+    },
+    {
+      "id": "ohayoh",
+      "name": "Ohayoh",
+      "summary": "연말 스타일링 - 하이라이터",
+      "account": "ohayoh.official",
+      "hashtags": "#광고 #오헤이오",
+      "hashNote": "광고 표기를 멘션 맨 앞에 배치",
+      "reward": "하이라이터",
+      "deadline": "11/12",
+      "announce": "11/17",
+      "uploadDate": "11월 4주차",
+      "status": "open",
+      "collab": true,
+      "secondaryUse": true,
+      "hot": true,
+      "color": "#ffddc2",
+      "category": "뷰티",
+      "make": [],
+      "upload": [],
+      "reels": [
+        "reels/ohayoh-1-mwagicsc.mp4",
+        "reels/ohayoh-2-mwagict1.mp4"
+      ],
+      "tierHashes": [],
+      "tierFees": {
+        "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
+          "v": "enc3:WT/WwtT1BtkEDwhF.iPaF/JvY++RckFYXpcUl3XS2svbCxnM=",
+          "s": "enc2:6kjpkbQTfcecbHti38KT6w==.ZU1Nx2dzfA==.ifSzjkh8KrUmR0sBwBJjWA=="
+        },
+        "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
+          "v": "enc3:4O8h9EMnFxQ43Ab/.Ot84JbXLTT8nDZ0mkf00lo/tNf4QVRWf",
+          "s": "enc2:Xhh3aWqYvt5HGL1zmxz+8Q==.5FD2bo/EmPs=.i1c6jiBOFrDl1bLldCV9VA=="
+        },
+        "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
+          "v": "enc3:f9c1hrLZGhW+gcC0.UzTtQ6YXLP4tnfKazR0JdzDf7tIa+CJe",
+          "s": "enc2:NoF3EO3MfWzoaFcA02sw5g==.9EtScE6VBio=.FkFKVqIafG5gOCazr8GFvw=="
+        }
+      }
     }
   ],
   "settings": {
