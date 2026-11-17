@@ -29,6 +29,20 @@ const COL = (name) => HEADERS.indexOf(name) + 1;          // 열 번호 (1부터
 const TEXT_COLS = ['연락처', '우편번호'];                  // 앞자리 0 이 지워지지 않게 '일반 텍스트' 서식
 const TEST_MARK = '[테스트] ';
 
+/* 링크별 색 — 줄 전체는 옅게, '지원 링크' 칸은 진하게 (금액은 RATES 에 적은 값과 같게) */
+const LINK_COLORS = {
+  '5만원':  { row: '#EEF6EA', cell: '#C9E3BD' },
+  '10만원': { row: '#EAF2FB', cell: '#BFD8F2' },
+  '20만원': { row: '#F4ECF8', cell: '#DCC5EA' },
+  '50만원': { row: '#FDF0E6', cell: '#F6CFA9' },
+};
+const DEFAULT_COLOR = { row: '#FFFFFF', cell: '#EEEEEE' };   // 비공개 링크 등
+
+/* 고료를 따로 요청한 것 같으면 그 칸을 노란색으로 */
+const FEE_CHECK = ['이름', '하고 싶은 말'];
+const FEE_HIGHLIGHT = '#FFE14D';
+const FEE_PATTERN = /(원고료|고료|단가|비용|금액|협찬비|광고비|제작비|수수료|페이(?!지)|만\s*원|\d[\d,]*\s*원|\bfee\b|\bpay\b|\bcost\b)/i;
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
@@ -60,7 +74,22 @@ function doPost(e) {
     const rows = values.map((v) => { const r = new Array(width).fill(''); HEADERS.forEach((h, j) => { r[col[h] - 1] = v[j]; }); return r; });
     const start = sheet.getLastRow() + 1;
     TEXT_COLS.forEach((h) => sheet.getRange(start, col[h], rows.length, 1).setNumberFormat('@'));
-    sheet.getRange(start, 1, rows.length, width).setValues(rows);
+    const block = sheet.getRange(start, 1, rows.length, width);
+    block.setValues(rows).setVerticalAlignment('middle').setWrap(true);
+
+    /* 링크별 색 */
+    const color = LINK_COLORS[RATES[code]] || DEFAULT_COLOR;
+    block.setBackground(color.row);
+    sheet.getRange(start, col['지원 링크'], rows.length, 1)
+      .setBackground(color.cell).setFontWeight('bold').setHorizontalAlignment('center');
+
+    /* 이름·하고 싶은 말에 고료 요청이 있으면 노란색 */
+    FEE_CHECK.forEach((h) => {
+      if (FEE_PATTERN.test(String(d[h === '이름' ? 'name' : 'message'] || ''))) {
+        sheet.getRange(start, col[h], rows.length, 1).setBackground(FEE_HIGHLIGHT).setFontWeight('bold');
+      }
+    });
+
     if (instaUrl) {   // 인스타그램 칸을 눌러 바로 프로필로 이동
       const link = SpreadsheetApp.newRichTextValue().setText(instaUrl).setLinkUrl(instaUrl).build();
       sheet.getRange(start, col['인스타그램'], rows.length, 1).setRichTextValues(rows.map(() => [link]));
