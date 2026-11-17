@@ -202,8 +202,9 @@
       "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
       "hashNote": "-",
       "reward": "블러셔 or 립",
-      "deadline": "11.12 마감",
-      "announce": "11/16",
+      "deadline": "",
+      "announce": "",
+      "uploadDate": "",
       "status": "open",
       "collab": true,
       "secondaryUse": true,
@@ -216,7 +217,21 @@
         "reels/hera-1-mw3aawae.mp4",
         "reels/hera-2-mw3aazeu.mp4"
       ],
-      "tierHashes": []
+      "tierHashes": [],
+      "tierFees": {
+        "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
+          "v": "enc3:vJfPF9jJ7CL1sbJ8.Df8Ov4fwsfOkEER2WUoDu27nt49XWSU=",
+          "s": "enc2:Sq/KxEgBOl9IXbtnctG4WQ==.2MP8NoXooQ==.HrX6Pgdsy2lcr8mopWbVvg=="
+        },
+        "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
+          "v": "enc3:9MVS4M8U5/XUJXAN.1dpPKJBn0EOw3RZRG20kSVlGoBydmmX2",
+          "s": "enc2:kG6nyGkeMl3iiuWb1WsYrQ==.llyI95uYB8s=.Dnbqt/OcZYOgwBQY2aKHFw=="
+        },
+        "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
+          "v": "enc3:m0TnUTt0hNsakc/c.CQnjmBbkIGx+l7DvcCEcq8drVbhNZZyP",
+          "s": "enc2:kcxxU0P5PcGwavGP5Ds1kQ==.wZHAVraJ5AY=.KCPJdi+wOtw1MC4T2OAWKw=="
+        }
+      }
     }
   ],
   "settings": {
