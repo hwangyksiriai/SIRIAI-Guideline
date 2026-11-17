@@ -46,7 +46,7 @@
       "deadline": "11/11",
       "announce": "11/16",
       "uploadDate": "",
-      "status": "open",
+      "status": "hidden",
       "collab": true,
       "secondaryUse": true,
       "hot": true,
@@ -61,16 +61,16 @@
       "tierHashes": [],
       "tierFees": {
         "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
-          "v": "enc3:E2szk4TCaLK1ZJz7.NWvy+ZY4BnJ8hqCbM0jYFAEBTE/ndiMQySfkAQo=",
-          "s": "enc2:apER94f6k7WRnAQraf29Gw==.Q7fWMLhue/2jP6Fr5w==.ppNo8Bw07J0oywKS/MJF6w=="
+          "v": "enc3:rOwbhNEDQAskq1DU.mZnEE3LiePkf4kufBBfy4nWFjeg1Qc4eqf+mJ48=",
+          "s": "enc2:g1sq8zJmQsIHe1b4vzOJkw==.onDTkFCuTVdx90lMeA==.DAmLF7kBIUqXANM57HoTEg=="
         },
         "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
-          "v": "enc3:mj8xefolhM1wpH5A.WTwyY66J0tc+iN6dp8/nb8vp9ffr3Ak=",
-          "s": "enc2:aUqT7rSaxKrRzqlqWqL33g==.hDtXzZ9iFQ==.0MFSOk3qph5Hq889+qzbIQ=="
+          "v": "enc3:zVwCKoxtbOfju8G/.HKmi55rxu6GSCJ6twXSNISW4YLL1T2Y=",
+          "s": "enc2:8yDPwl1Vn2kqJ7KCNLYnag==.5rPQ3kIQSg==.DCocgLwd+HMdtTFu7tFWaw=="
         },
         "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
-          "v": "enc3:fi4yI8EInS/Me1Zk.tDRNU+p4uHN/IAj1VoYJp5+cFgF7N9NR",
-          "s": "enc2:Wajjs2ZXo2bwpyKx8Ztr+Q==./WVUs8RORlM=.kQ+a4j03apSsgHiFerxJ3Q=="
+          "v": "enc3:FTEtKsGRJBVsku8K.rkqu0AMrqLFKTnrCPQONOxJGtrB5+Ll+",
+          "s": "enc2:YEg8bRnKkCDNJhZGF/+Qmg==.a6PZDzv3WIY=.2w6aQbYZuaribotsJLZQcQ=="
         }
       }
     },
