@@ -256,7 +256,9 @@ textarea.input{ resize:vertical; min-height:84px; line-height:1.5; }
    운영 방법은 내부 허브 페이지에 있어요. */
 let SUBMIT_URL = '';   // 구글 시트 접수 주소 — brands.json settings.submitUrl (어드민에서 설정)
 
-const PAGE =(new URLSearchParams(location.search).get('p') || '').trim().slice(0, 20);
+/* ?p=neg5c4 또는 짧은 주소 ?neg5c4 둘 다 받아요 */
+const PAGE = (new URLSearchParams(location.search).get('p')
+  || (/^\?([a-z0-9]{4,20})$/i.exec(location.search) || [])[1] || '').trim().slice(0, 20);
 
 /* 브랜드 내용은 brands.json 에 있어요 (어드민 페이지에서 수정). */
 let PAST_BRANDS = [];
