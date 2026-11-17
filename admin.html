@@ -438,7 +438,7 @@ async function fillFees(L){
 /* ── 브랜드별 보낼 링크 (고료 링크 + 그 브랜드로 바로) ── */
 function openLinks(id){
   const b = DATA.brands.find((x) => x.id === id); if (!b) return;
-  const base = new URL('./', location.href).href;
+  const base = 'https://hwangyksiriai.github.io/go/';   // 짧은 주소 → 가이드로 바로 넘어가요
   const tiers = TIERS.filter((t) => !b.tierHashes?.length || b.tierHashes.includes(TIER_HASH[t.code]));
   const st = b.status || 'open';
   $('editorRoot').innerHTML = `<div class="overlay" id="ov"><div class="editor">
@@ -446,7 +446,7 @@ function openLinks(id){
     <p class="desc">인플루언서에게 맞는 고료의 링크를 보내주세요. 열면 소개 화면을 건너뛰고 <b>${esc(b.name)}</b> 가이드가 바로 보여요.</p>
     ${st !== 'open' ? `<div class="gh-state warn" style="margin-bottom:12px"><span class="dot"></span><span>지금 <b>${STATUS[st]}</b> 상태예요. ${st === 'hidden' ? '링크를 열어도 이 브랜드는 안 보여요.' : '가이드는 보이지만 지원은 막혀 있어요.'}</span></div>` : ''}
     <div class="links">${tiers.map((t) => {
-      const url = `${base}?p=${encodeURIComponent(t.code)}#${encodeURIComponent(b.id)}`;
+      const url = `${base}?${encodeURIComponent(t.code)}#${encodeURIComponent(b.id)}`;
       return `<div class="link-row"><b>${esc(t.label)}</b><span>${esc(url)}</span><button class="btn primary" data-copylink="${esc(url)}">복사</button></div>`;
     }).join('') || '<div class="empty">이 브랜드가 노출되는 고료 링크가 없어요.</div>'}</div>
     <div class="editor-foot"><button type="button" class="btn" id="edCancel">닫기</button></div>
