@@ -46,7 +46,7 @@
       "deadline": "11/11",
       "announce": "11/16",
       "uploadDate": "",
-      "status": "open",
+      "status": "hidden",
       "collab": true,
       "secondaryUse": true,
       "hot": true,
@@ -61,16 +61,16 @@
       "tierHashes": [],
       "tierFees": {
         "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
-          "v": "enc3:E2szk4TCaLK1ZJz7.NWvy+ZY4BnJ8hqCbM0jYFAEBTE/ndiMQySfkAQo=",
-          "s": "enc2:apER94f6k7WRnAQraf29Gw==.Q7fWMLhue/2jP6Fr5w==.ppNo8Bw07J0oywKS/MJF6w=="
+          "v": "enc3:rOwbhNEDQAskq1DU.mZnEE3LiePkf4kufBBfy4nWFjeg1Qc4eqf+mJ48=",
+          "s": "enc2:g1sq8zJmQsIHe1b4vzOJkw==.onDTkFCuTVdx90lMeA==.DAmLF7kBIUqXANM57HoTEg=="
         },
         "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
-          "v": "enc3:mj8xefolhM1wpH5A.WTwyY66J0tc+iN6dp8/nb8vp9ffr3Ak=",
-          "s": "enc2:aUqT7rSaxKrRzqlqWqL33g==.hDtXzZ9iFQ==.0MFSOk3qph5Hq889+qzbIQ=="
+          "v": "enc3:zVwCKoxtbOfju8G/.HKmi55rxu6GSCJ6twXSNISW4YLL1T2Y=",
+          "s": "enc2:8yDPwl1Vn2kqJ7KCNLYnag==.5rPQ3kIQSg==.DCocgLwd+HMdtTFu7tFWaw=="
         },
         "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
-          "v": "enc3:fi4yI8EInS/Me1Zk.tDRNU+p4uHN/IAj1VoYJp5+cFgF7N9NR",
-          "s": "enc2:Wajjs2ZXo2bwpyKx8Ztr+Q==./WVUs8RORlM=.kQ+a4j03apSsgHiFerxJ3Q=="
+          "v": "enc3:FTEtKsGRJBVsku8K.rkqu0AMrqLFKTnrCPQONOxJGtrB5+Ll+",
+          "s": "enc2:YEg8bRnKkCDNJhZGF/+Qmg==.a6PZDzv3WIY=.2w6aQbYZuaribotsJLZQcQ=="
         }
       }
     },
@@ -85,7 +85,7 @@
       "deadline": "11/11",
       "announce": "11/16",
       "uploadDate": "",
-      "status": "open",
+      "status": "hidden",
       "collab": true,
       "secondaryUse": true,
       "hot": true,
@@ -103,30 +103,30 @@
       "tierHashes": [],
       "tierFees": {
         "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
-          "v": "enc3:CDQHMTjkHKxIlGFb.QTNfdoR3Z0F387XamViLX9Osg9HDSzZDtqdt5H8=",
-          "s": "enc2:iQe/iMztBQS6m3rbwk+PPg==.XlUE1ap119pB1706JA==.RPu1mYEmFvorj/qtpkSLcQ=="
+          "v": "enc3:+/L9EUa5lTXdQz8g.ogkjgzMI0xuhz5A0J8t6jsH7EFkwMRRVLqJYaoU=",
+          "s": "enc2:gPnLOxd+A/25ZFCI+XdUAQ==.mUmThe20dcKRd7Y6Ew==.mHY8iZhRx4/Cxrgx7f+6qw=="
         },
         "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
-          "v": "enc3:wsSOlUJe2XNwEtXJ.08GzHnmIRrIyGCuGTEsh/zlwbxKBfXs=",
-          "s": "enc2:NnqzLAOKZbQivJo2gceZsA==.zzla8KYMmg==.bYUC7B6vmEcEVVvpn3urBw=="
+          "v": "enc3:F0Tp6YVCorgaBgkX.NNhlifIs/oet3EEJd8GFNBCr5XEZ+zc=",
+          "s": "enc2:bWMk9JLudRljbTbJ+EDiNA==.OVNs+oaGVQ==.YP34Ga8s0HvU6tGzZpXYcg=="
         },
         "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
-          "v": "enc3:yAq3vwrPIbnoNr8p.WYtdZbt1DTbeTTUnKj+QY39UoDZNUj6T",
-          "s": "enc2:eh1vuj0dOfXaI+uDu4F4XA==.4uM+pvslfUs=.88rOhlJEfJMNDKjHMLGMfQ=="
+          "v": "enc3:/3scWJ+XO3OIjgyN.7XvOO2NVFkylMaFaLCu5ZuwBKlnQdqA0",
+          "s": "enc2:A7J1WlZJVb2jBjcxEqjAmw==.33tSeQeaFiw=.f0c5l8fYzWE0Lo+suJm4eA=="
         }
       }
     },
     {
       "id": "ohayoh",
       "name": "Ohayoh",
-      "summary": "연말 스타일링 - 하이라이터",
+      "summary": "연말 / 연초 스타일링",
       "account": "ohayoh.official",
       "hashtags": "#광고 #오헤이오",
       "hashNote": "광고 표기를 멘션 맨 앞에 배치",
-      "reward": "하이라이터",
-      "deadline": "11/12",
-      "announce": "11/17",
-      "uploadDate": "11월 4주차",
+      "reward": "하이라이터 or 블러셔",
+      "deadline": "",
+      "announce": "",
+      "uploadDate": "",
       "status": "open",
       "collab": true,
       "secondaryUse": true,
@@ -142,16 +142,16 @@
       "tierHashes": [],
       "tierFees": {
         "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
-          "v": "enc3:WT/WwtT1BtkEDwhF.iPaF/JvY++RckFYXpcUl3XS2svbCxnM=",
-          "s": "enc2:6kjpkbQTfcecbHti38KT6w==.ZU1Nx2dzfA==.ifSzjkh8KrUmR0sBwBJjWA=="
+          "v": "enc3:bAM9JSDnje+DjqXx.5EBmK/pVMgWDjo7sdGdOTIhkSLpE37A=",
+          "s": "enc2:6N/HYaoNXfk8AAu5RKIkwQ==.H/5R77yBwA==.58CnITXtChj+fQgj9B8fCg=="
         },
         "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
-          "v": "enc3:4O8h9EMnFxQ43Ab/.Ot84JbXLTT8nDZ0mkf00lo/tNf4QVRWf",
-          "s": "enc2:Xhh3aWqYvt5HGL1zmxz+8Q==.5FD2bo/EmPs=.i1c6jiBOFrDl1bLldCV9VA=="
+          "v": "enc3:egLR0vaKWKnCvatt.mEr/bE9t4PWo5M4ib+BQl9oHm9b1OMa+",
+          "s": "enc2:oUtV8rP7/5fe/Zl7uHckrg==.hrIuVc07V+U=.X3A91zNspjDDMnPbyP7J9A=="
         },
         "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
-          "v": "enc3:f9c1hrLZGhW+gcC0.UzTtQ6YXLP4tnfKazR0JdzDf7tIa+CJe",
-          "s": "enc2:NoF3EO3MfWzoaFcA02sw5g==.9EtScE6VBio=.FkFKVqIafG5gOCazr8GFvw=="
+          "v": "enc3:UhxIjdBzZMW6AWJM.ONSgnMH+BwpezNaDl59rDOTSwPkIbFXY",
+          "s": "enc2:XSU6sf9oKSdlopB2oQIBMw==.r8eWtxhJn3A=.U0onOkrgFNHqxtdnSW5Hdg=="
         }
       }
     },
@@ -163,8 +163,8 @@
       "hashtags": "#광고 #오플로우",
       "hashNote": "광고 표기를 멘션 맨 앞에 배치",
       "reward": "매트/글로우 립",
-      "deadline": "11/12",
-      "announce": "11/13",
+      "deadline": "",
+      "announce": "",
       "uploadDate": "",
       "status": "open",
       "collab": true,
@@ -181,16 +181,16 @@
       "tierHashes": [],
       "tierFees": {
         "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
-          "v": "enc3:jxGdfQwxB0TS2DkG.ovMPJCrX7auRdnHw583xS7iJABbaN0E=",
-          "s": "enc2:FnUhrQCZjumYlZs4Ln74gg==.vCb5wxNC3Q==.c6bVOqK/TuvXKH8Y7qyLRw=="
+          "v": "enc3:WZA+KCsuac3FHx48.ZekYSbcBX5M54EWCeyMHlVCaZUuf3tw=",
+          "s": "enc2:+Jx5MDasvW275h5mArtAAg==.RQOpr8ltsg==.v9Vmrn1+h/EK6FPu269pog=="
         },
         "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
-          "v": "enc3:uGtXSOb31zinQSdR.O0TSi12bg03M1DWdU887SKRoGPo2Q586",
-          "s": "enc2:66yutSUvAJsPISI5j2IqfQ==.25LeGGSgnOc=.WKeV48vFHgbACIP2r7B72w=="
+          "v": "enc3:jz5ldxA34rVvw01l.3lECQQyEXZVCZHVB1jlDGhyeQT73UMe7",
+          "s": "enc2:rfPnNP5+m7QV7O+MvrW+cw==.prJrrVGJigM=.av+u+isu78qg1YrnkehjGw=="
         },
         "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
-          "v": "enc3:yPZnhR/blu3ORZ4e.EH2SOTkyZJq6LNieQfApOXFAoPdJ58ey",
-          "s": "enc2:Y1SOrCudnePJqsm+OjBaKw==.2BKq+7Rz7bA=.kNgpUwidRbjQi1PtK8VtDw=="
+          "v": "enc3:jyZxKTqe9j4oKpC4.g9ZOXLMZY3gcNpo1WZaQVyMGOoeuo5as",
+          "s": "enc2:vTbLwvaO5YR94PikE5xmPw==.tkkHbyO1Wi8=.nMzra8Lut50LvVYJnG/BjA=="
         }
       }
     },
@@ -202,8 +202,9 @@
       "hashtags": "#광고 #키핀터치 #블러셔 #하이라이터",
       "hashNote": "-",
       "reward": "블러셔 or 립",
-      "deadline": "11.12 마감",
-      "announce": "11/16",
+      "deadline": "",
+      "announce": "",
+      "uploadDate": "",
       "status": "open",
       "collab": true,
       "secondaryUse": true,
@@ -216,7 +217,21 @@
         "reels/hera-1-mw3aawae.mp4",
         "reels/hera-2-mw3aazeu.mp4"
       ],
-      "tierHashes": []
+      "tierHashes": [],
+      "tierFees": {
+        "3fa0cb12e26851df57b86e90d98fe946f6d2518ff04b62f08be515d24c9e466f": {
+          "v": "enc3:vJfPF9jJ7CL1sbJ8.Df8Ov4fwsfOkEER2WUoDu27nt49XWSU=",
+          "s": "enc2:Sq/KxEgBOl9IXbtnctG4WQ==.2MP8NoXooQ==.HrX6Pgdsy2lcr8mopWbVvg=="
+        },
+        "98f3f8f6c547f0394613f3c15d0754544584494c58dfd7d8ad1e1c945aea78ff": {
+          "v": "enc3:9MVS4M8U5/XUJXAN.1dpPKJBn0EOw3RZRG20kSVlGoBydmmX2",
+          "s": "enc2:kG6nyGkeMl3iiuWb1WsYrQ==.llyI95uYB8s=.Dnbqt/OcZYOgwBQY2aKHFw=="
+        },
+        "b5ceb58d831bd335879ec44e0185b18d59a98922ef75975befa2db25ad19fd20": {
+          "v": "enc3:m0TnUTt0hNsakc/c.CQnjmBbkIGx+l7DvcCEcq8drVbhNZZyP",
+          "s": "enc2:kcxxU0P5PcGwavGP5Ds1kQ==.wZHAVraJ5AY=.KCPJdi+wOtw1MC4T2OAWKw=="
+        }
+      }
     }
   ],
   "settings": {
