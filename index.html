@@ -464,7 +464,7 @@ function renderApply(){
 }
 
 /* 주소 검색 (카카오 우편번호 서비스 — 키 없이 무료) : 화면 위에 검색창을 띄워요 */
-const POSTCODE_SRC = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+const POSTCODE_SRC = 'https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
 let postcodeLoading = null;
 function loadPostcode(){
   if (window.daum?.Postcode) return Promise.resolve();
